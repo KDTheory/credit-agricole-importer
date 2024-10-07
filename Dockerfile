@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-COPY generate_config.sh /app/generate_config.sh
+COPY ./generate_config.sh /app/generate_config.sh
 RUN chmod +x /app/generate_config.sh
 
 ENTRYPOINT ["/app/generate_config.sh"]
