@@ -17,12 +17,12 @@ jobs:
         run: |
           git remote add upstream https://github.com/Royalphax/credit-agricole-importer.git
           git fetch upstream
-          git checkout main
-          git merge upstream/main --no-edit || true
+          git checkout master
+          git merge upstream/master --no-edit || true
 
       - name: Check if there are new commits
         id: check_changes
-        run: echo "::set-output name=changes::$(git rev-list HEAD...upstream/main --count)"
+        run: echo "::set-output name=changes::$(git rev-list HEAD...upstream/master --count)"
 
       - name: Build and push Docker image if upstream changed
         if: steps.check_changes.outputs.changes != '0'
