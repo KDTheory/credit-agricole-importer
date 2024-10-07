@@ -30,13 +30,23 @@ class CreditAgricoleClient:
         self.department = self.config.get('CreditAgricole', 'department')
         print(f"Debug: Department value: '{self.department}'")
     
-        if self.department not in CA_REGIONS:
+        # Conversion du département en région
+        department_to_region = {
+            '31': 'toulouse31',
+            # Ajoutez d'autres correspondances si nécessaire
+        }
+    
+        self.region = department_to_region.get(self.department)
+        if not self.region:
             print(f"Debug: Available regions: {list(CA_REGIONS.keys())}")
             self.logger.error(f"Invalid department: {self.department}")
-            raise ValueError(f"Invalid department: {self.department}")
+            raise ValueError(f"Invalid department: {self.department}. Please use a valid region code.")
     
-        self.region = CA_REGIONS[self.department]
         print(f"Debug: Region determined: '{self.region}'")
+    
+        if self.region not in CA_REGIONS:
+            self.logger.error(f"Invalid region: {self.region}")
+            raise ValueError(f"Invalid region: {self.region}")
     
         self.username = self.config.get('CreditAgricole', 'username')
         self.password = self.config.get('CreditAgricole', 'password')
@@ -46,6 +56,7 @@ class CreditAgricoleClient:
             raise ValueError("Missing username or password")
     
         print("Debug: CreditAgricoleClient initialization completed successfully")
+
 
 
     def validate(self):
