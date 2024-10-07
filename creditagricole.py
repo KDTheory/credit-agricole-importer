@@ -33,29 +33,34 @@ class CreditAgricoleClient:
         self.region_id = None
         self.session = None
 
-    def validate(self):
-        if self.department == BANK_DEPARTMENT_DEFAULT:
-            self.logger.error("Please set your bank account department.")
-        self.region_id = CreditAgricoleRegion.get_ca_region(self.department)
-        if self.region_id is None:
-            self.logger.error("Unknown department number. Please contact the developers.")
-        if len(self.region_id) > 1:
-            msg = "Unfortunately your department number is not enough to know what is your CA region. Please replace your department number by one of the following CA region :\n"
-            for ca_reg in self.region_id:
-                msg = msg + "-> " + BANK_DEPARTMENT_FIELD + " = " + ca_reg + " (if your accounts are managed by Credit Agricole " + CA_REGIONS[ca_reg] + ")\n\r"
-            self.logger.error(msg)
-        else:
-            self.region_id = self.region_id[0]
-        if not self.account_id.isdigit() or len(self.account_id) != len(BANK_ACCOUNT_ID_DEFAULT) or self.account_id == BANK_ACCOUNT_ID_DEFAULT:
-            self.logger.error("Your bank account ID must be a 11 long digit.")
-        if not self.password.isdigit() or len(self.password) != len(BANK_PASSWORD_DEFAULT) or self.password == BANK_PASSWORD_DEFAULT:
-            self.logger.error("Your bank password must be a 6 long digit.")
-        if self.enabled_accounts == IMPORT_ACCOUNT_ID_LIST_DEFAULT:
-            self.logger.error("Please set your account ID list to import.")
-        if not self.get_transactions_period.isdigit() or int(self.get_transactions_period) < 0:
-            self.logger.error("Your transactions's get period must be a positive number.")
-        if not self.max_transactions.isdigit() or int(self.max_transactions) < 0:
-            self.logger.error("The maximum number of transactions to get must be a positive number.")
+def validate(self):
+    print("Debug: Entering validate method")
+    department = self.config.get('CreditAgricole', 'department', fallback=None)
+    print(f"Debug: Raw department value: '{department}'")
+    
+    if department is not None:
+        department = department.strip()
+    
+    print(f"Debug: Stripped department value: '{department}'")
+    
+    if not department or department not in DEPARTMENT:
+        self.logger.error("Please set your bank account department.")
+        raise Exception("Please set your bank account department.")
+    
+    self.department = department
+    print(f"Debug: Department validation passed with value: '{self.department}'")
+
+    if not self.config.get('CreditAgricole', 'username'):
+        self.logger.error("Please set your bank account username.")
+        raise Exception("Please set your bank account username.")
+
+    if not self.config.get('CreditAgricole', 'password'):
+        self.logger.error("Please set your bank account password.")
+        raise Exception("Please set your bank account password.")
+
+    self.username = self.config.get('CreditAgricole', 'username')
+    self.password = self.config.get('CreditAgricole', 'password')
+
 
     def init_session(self):
         password_list = []
