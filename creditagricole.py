@@ -5,6 +5,7 @@ from constant import *
 import urllib.parse
 import requests
 import re
+import logging
 
 
 class CreditAgricoleAuthenticator(Authenticator):
@@ -24,7 +25,7 @@ class CreditAgricoleAuthenticator(Authenticator):
 class CreditAgricoleClient:
     def __init__(self, config, logger):
         self.config = config
-        self.logger = logger
+        self.logger = logging.getLogger(__name__)
         self.session = requests.Session()
         
         self.department = config.get('CreditAgricole', 'department')
