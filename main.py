@@ -74,7 +74,7 @@ if __name__ == '__main__':
         max_logs = int(settings_section.get(MAX_LOG_FILES_FIELD, MAX_LOG_FILES_DEFAULT))
 
         # Init CreditAgricole instance
-        ca_cli = CreditAgricoleClient(logger)
+        ca_cli = CreditAgricoleClient(config, logger)
         ca_cli.department = credit_agricole_section.get(BANK_DEPARTMENT_FIELD, BANK_DEPARTMENT_DEFAULT)
         ca_cli.account_id = credit_agricole_section.get(BANK_ACCOUNT_ID_FIELD, BANK_ACCOUNT_ID_DEFAULT)
         ca_cli.password = credit_agricole_section.get(BANK_PASSWORD_FIELD, BANK_PASSWORD_DEFAULT)
