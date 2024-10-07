@@ -93,16 +93,48 @@ class CreditAgricoleClient:
         self.logger.info("Login successful")
         return True
 
+    def init_session(self):
+        """
+        Initialise la session et effectue la connexion au site du Crédit Agricole.
+        """
+        self.logger.info("Initializing session")
+        login_url = f"{self.base_url}/particulier/acceder-a-mes-comptes.html"
+        
+        # Étape 1 : Obtenir la page de connexion et extraire le jeton CSRF
+        response = self.session.get(login_url, headers=self.headers)
+        self.csrf_token = self.extract_csrf_token(response.text)
+        
+        if not self.csrf_token:
+            self.logger.error("Failed to extract CSRF token")
+            raise ValueError("CSRF token not found")
+
+        # Étape 2 : Soumettre le nom d'utilisateur
+        username_data = {
+            "j_username": self.username,
+            "csrf_token": self.csrf_token
+        }
+        response = self.session.post(login_url, data=username_data, headers=self.headers)
+        
+        # Étape 3 : Soumettre le mot de passe (simulation des clics sur le clavier virtuel)
+        password_data = {
+            "j_password": self.encode_password(),
+            "j_numeric_grid_selection": "true",
+            "csrf_token": self.csrf_token
+        }
+        response = self.session.post(login_url, data=password_data, headers=self.headers)
+        
+        if "Votre identification a échoué" in response.text:
+            self.logger.error("Login failed: Invalid credentials")
+            raise ValueError("Invalid credentials")
+        
+        self.logger.info("Session initialized successfully")
+        
     def extract_csrf_token(self, html_content):
         match = re.search(r'name="csrf_token".*?value="([^"]+)"', html_content, re.DOTALL)
-        if match:
-            return match.group(1)
-        self.logger.error("Failed to extract CSRF token")
-        return None
+        return match.group(1) if match else None
 
     def encode_password(self):
-        # This method should be adapted based on how the bank's virtual keypad works
-        # For now, we'll just return the password as a comma-separated list of ASCII values
+        # Cette méthode doit être adaptée en fonction de la façon dont le site encode les clics sur le clavier virtuel
         return ','.join(str(ord(char)) for char in self.password)
 
     def handle_additional_auth(self, response):
