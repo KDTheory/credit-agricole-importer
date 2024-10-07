@@ -26,35 +26,34 @@ class CreditAgricoleAuthenticator(Authenticator):
 class CreditAgricoleClient:
     def __init__(self, config, logger):
         self.config = config
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.department = config.get('CreditAgricole', 'department')
         self.username = config.get('CreditAgricole', 'username')
         self.password = self.parse_password(config.get('CreditAgricole', 'password'))
         self.session = None
 
-    def log_message(self, message, level=logging.INFO):
-        if hasattr(self.logger, 'log'):
-            self.logger.log(level, message)
-        elif hasattr(self.logger, 'info'):
-            self.logger.info(message)
-        else:
-            print(message)  # Fallback to print if no suitable logging method is found
-            
     def parse_password(self, password_string):
-        # Convertit la chaîne de caractères du mot de passe en liste d'entiers
-        return [int(char) for char in password_string]
-        
+        return [int(char) for char in password_string if char.isdigit()]
+
+    def validate_department(self):
+        if not self.department.isdigit() or len(self.department) != 2 or self.department == '00':
+            raise ValueError(f"Invalid department number: {self.department}. It should be a valid two-digit French department number.")
+
     def init_session(self):
         try:
-            self.logger.log(logging.DEBUG, f"Initializing session with username: {self.username}, department: {self.department}")
+            self.validate_department()
+            self.logger.log(logging.INFO, f"Initializing session with username: {self.username}, department: {self.department}")
             self.session = Authenticator(
                 username=self.username,
                 password=self.password,
                 department=int(self.department)
             )
-            self.logger.log("Session initialized successfully")
+            self.logger.log(logging.INFO, "Session initialized successfully")
+        except ValueError as ve:
+            self.logger.log(logging.ERROR, f"Validation error: {str(ve)}")
+            raise
         except Exception as e:
-            self.logger.error(f"Failed to initialize session: {str(e)}")
+            self.logger.log(logging.ERROR, f"Failed to initialize session: {str(e)}")
             raise
 
     def validate(self):
