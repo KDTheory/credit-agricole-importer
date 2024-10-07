@@ -55,7 +55,7 @@ class CreditAgricoleClient:
             self.logger.error("Missing username or password")
             raise ValueError("Missing username or password")
 
-        self.url = f"https://www.credit-agricole.fr/{self.region}"
+        self.url = f"https://www.credit-agricole.fr/ca-{self.region}/"
         print(f"Debug: URL set to: {self.url}")
         self.csrf_token = None
 
