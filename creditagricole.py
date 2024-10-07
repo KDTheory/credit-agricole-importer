@@ -78,10 +78,52 @@ class CreditAgricoleClient:
 
 
     def init_session(self):
+        print("Debug: Entering init_session method")
+        
         password_list = []
-        for i in range(len(self.password)):
-            password_list.append(int(self.password[i]))
-        self.session = CreditAgricoleAuthenticator(username=self.account_id, password=password_list, ca_region=self.region_id)
+        for char in self.password:
+            if char.isdigit():
+                password_list.append(int(char))
+            else:
+                password_list.append(ord(char))  # Utilise le code ASCII pour les non-chiffres
+        print(f"Debug: Password processed, length: {len(password_list)}")
+    
+        data = {
+            "j_password": password_list,
+            "j_username": self.username,
+            "j_numeric_grid_selection": "true"
+        }
+    
+        print("Debug: Preparing to send login request")
+        response = self.session.post(
+            f"{self.url}/particulier/acceder-a-mes-comptes.html",
+            json=data
+        )
+        print(f"Debug: Login request sent, status code: {response.status_code}")
+    
+        if response.status_code != 200:
+            error_msg = f"Login failed with status code: {response.status_code}"
+            self.logger.error(error_msg)
+            raise Exception(error_msg)
+    
+        print("Debug: Checking for successful login")
+        if "Votre identification a échoué" in response.text:
+            error_msg = "Login failed: Invalid credentials"
+            self.logger.error(error_msg)
+            raise Exception(error_msg)
+    
+        print("Debug: Login successful, extracting CSRF token")
+        csrf_token = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
+        if not csrf_token:
+            error_msg = "Failed to extract CSRF token"
+            self.logger.error(error_msg)
+            raise Exception(error_msg)
+    
+        self.csrf_token = csrf_token.group(1)
+        print(f"Debug: CSRF token extracted: {self.csrf_token[:10]}...")  # Affiche les 10 premiers caractères pour la sécurité
+    
+        print("Debug: init_session completed successfully")
+
 
     def get_accounts(self):
         accounts = []
