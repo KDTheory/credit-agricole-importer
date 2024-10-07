@@ -33,33 +33,33 @@ class CreditAgricoleClient:
         self.region_id = None
         self.session = None
 
-def validate(self):
-    print("Debug: Entering validate method")
-    department = self.config.get('CreditAgricole', 'department', fallback=None)
-    print(f"Debug: Raw department value: '{department}'")
+    def validate(self):
+        print("Debug: Entering validate method")
+        department = self.config.get('CreditAgricole', 'department', fallback=None)
+        print(f"Debug: Raw department value: '{department}'")
+        
+        if department is not None:
+            department = department.strip()
+        
+        print(f"Debug: Stripped department value: '{department}'")
+        
+        if not department or department not in DEPARTMENT:
+            self.logger.error("Please set your bank account department.")
+            raise Exception("Please set your bank account department.")
+        
+        self.department = department
+        print(f"Debug: Department validation passed with value: '{self.department}'")
     
-    if department is not None:
-        department = department.strip()
+        if not self.config.get('CreditAgricole', 'username'):
+            self.logger.error("Please set your bank account username.")
+            raise Exception("Please set your bank account username.")
     
-    print(f"Debug: Stripped department value: '{department}'")
+        if not self.config.get('CreditAgricole', 'password'):
+            self.logger.error("Please set your bank account password.")
+            raise Exception("Please set your bank account password.")
     
-    if not department or department not in DEPARTMENT:
-        self.logger.error("Please set your bank account department.")
-        raise Exception("Please set your bank account department.")
-    
-    self.department = department
-    print(f"Debug: Department validation passed with value: '{self.department}'")
-
-    if not self.config.get('CreditAgricole', 'username'):
-        self.logger.error("Please set your bank account username.")
-        raise Exception("Please set your bank account username.")
-
-    if not self.config.get('CreditAgricole', 'password'):
-        self.logger.error("Please set your bank account password.")
-        raise Exception("Please set your bank account password.")
-
-    self.username = self.config.get('CreditAgricole', 'username')
-    self.password = self.config.get('CreditAgricole', 'password')
+        self.username = self.config.get('CreditAgricole', 'username')
+        self.password = self.config.get('CreditAgricole', 'password')
 
 
     def init_session(self):
