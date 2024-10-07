@@ -4,6 +4,7 @@ from creditagricole_particuliers import Authenticator, Accounts
 from constant import *
 import urllib.parse
 import requests
+import re
 
 
 class CreditAgricoleAuthenticator(Authenticator):
