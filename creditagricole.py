@@ -23,7 +23,7 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 
 class CreditAgricoleClient:
-    def __init__(self, config, logger):
+        def __init__(self, config, logger):
         self.config = config
         self.logger = logger
         self.session = requests.Session()
@@ -31,7 +31,7 @@ class CreditAgricoleClient:
         self.department = config.get('CreditAgricole', 'department')
         self.region = DEPARTMENTS_TO_CA_REGIONS.get(self.department)
         if not self.region:
-            self.logger.warning(f"Department {self.department} not found in mapping. Using default region.")
+            self.log_message("Department {} not found in mapping. Using default region.".format(self.department))
             self.region = 'toulouse31'  # Default to Toulouse 31
         
         self.base_url = f"https://www.credit-agricole.fr/ca-{self.region}"
@@ -44,20 +44,28 @@ class CreditAgricoleClient:
         }
         self.csrf_token = None
 
+    def log_message(self, message, level=logging.INFO):
+        if hasattr(self.logger, 'log'):
+            self.logger.log(level, message)
+        elif hasattr(self.logger, 'info'):
+            self.logger.info(message)
+        else:
+            print(message)  # Fallback to print if no suitable logging method is found
+
     def init_session(self):
-        self.logger.info("Initializing session")
+        self.log_message("Initializing session")
         login_url = f"{self.base_url}/particulier/acceder-a-mes-comptes.html"
         
         # Step 1: Get the login page
         response = self.session.get(login_url, headers=self.headers)
         if response.status_code != 200:
-            self.logger.error(f"Failed to load login page. Status code: {response.status_code}")
+            self.log_message(f"Failed to load login page. Status code: {response.status_code}", logging.ERROR)
             raise ValueError("Failed to load login page")
 
         # Step 2: Extract CSRF token
         self.csrf_token = self.extract_csrf_token(response.text)
         if not self.csrf_token:
-            self.logger.error("Failed to extract CSRF token")
+            self.log_message("Failed to extract CSRF token", logging.ERROR)
             raise ValueError("CSRF token not found")
 
         # Step 3: Submit username
@@ -76,10 +84,10 @@ class CreditAgricoleClient:
         response = self.session.post(login_url, data=password_data, headers=self.headers)
         
         if "Votre identification a échoué" in response.text:
-            self.logger.error("Login failed: Invalid credentials")
+            self.log_message("Login failed: Invalid credentials", logging.ERROR)
             raise ValueError("Invalid credentials")
         
-        self.logger.info("Session initialized successfully")
+        self.log_message("Session initialized successfully")
 
     def extract_csrf_token(self, html_content):
         # Try different patterns to extract CSRF token
