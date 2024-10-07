@@ -75,6 +75,22 @@ class CreditAgricoleClient:
             raise ValueError("Please set your bank account password.")
 
         print("Debug: Validation completed successfully")
+        
+    def check_url(self):
+        print(f"Debug: Checking URL: {self.url}")
+        try:
+            response = requests.get(self.url, timeout=10)
+            print(f"Debug: URL check status code: {response.status_code}")
+            if response.status_code == 200:
+                print("Debug: URL is accessible")
+            else:
+                print(f"Debug: URL returned unexpected status code: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            print(f"Debug: Error checking URL: {str(e)}")
+    
+    # Appelez cette méthode avant init_session dans votre code principal
+    ca_cli.check_url()
+    ca_cli.init_session()
 
     def init_session(self):
         print("Debug: Entering init_session method")
@@ -87,20 +103,31 @@ class CreditAgricoleClient:
             else:
                 password_list.append(ord(char))
         print(f"Debug: Password processed, length: {len(password_list)}")
-
+    
         data = {
             "j_password": password_list,
             "j_username": self.username,
             "j_numeric_grid_selection": "true"
         }
-
+    
         print("Debug: Preparing to send login request")
-        response = self.session.post(
-            f"{self.url}/particulier/acceder-a-mes-comptes.html",
-            json=data
-        )
-        print(f"Debug: Login request sent, status code: {response.status_code}")
-
+        headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        try:
+            response = self.session.post(
+                f"{self.url}/particulier/acceder-a-mes-comptes.html",
+                json=data,
+                timeout=30  # Ajout d'un timeout
+            )
+            print(f"Debug: Login request sent, status code: {response.status_code}")
+            print(f"Debug: Response headers: {response.headers}")
+            print(f"Debug: Response content: {response.text[:500]}...")  # Affiche les 500 premiers caractères de la réponse
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Request failed: {str(e)}"
+            self.logger.error(error_msg)
+            raise Exception(error_msg)
+    
         if response.status_code != 200:
             error_msg = f"Login failed with status code: {response.status_code}"
             self.logger.error(error_msg)
