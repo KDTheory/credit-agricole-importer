@@ -26,7 +26,7 @@ class CreditAgricoleAuthenticator(Authenticator):
 class CreditAgricoleClient:
     def __init__(self, config, logger):
         self.config = config
-        self.logger = logger
+        self.logger = logging.getLogger(__name__)
         self.department = config.get('CreditAgricole', 'department')
         self.username = config.get('CreditAgricole', 'username')
         self.password = self.parse_password(config.get('CreditAgricole', 'password'))
