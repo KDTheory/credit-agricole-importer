@@ -22,30 +22,30 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 class CreditAgricoleClient:
 
-def __init__(self, config, logger):
-    self.config = config
-    self.logger = logger
-    print("Debug: Entering CreditAgricoleClient initialization")
-
-    self.department = self.config.get('CreditAgricole', 'department')
-    print(f"Debug: Department value: '{self.department}'")
-
-    if self.department not in CA_REGIONS:
-        print(f"Debug: Available regions: {list(CA_REGIONS.keys())}")
-        self.logger.error(f"Invalid department: {self.department}")
-        raise ValueError(f"Invalid department: {self.department}")
-
-    self.region = CA_REGIONS[self.department]
-    print(f"Debug: Region determined: '{self.region}'")
-
-    self.username = self.config.get('CreditAgricole', 'username')
-    self.password = self.config.get('CreditAgricole', 'password')
-
-    if not self.username or not self.password:
-        self.logger.error("Missing username or password")
-        raise ValueError("Missing username or password")
-
-    print("Debug: CreditAgricoleClient initialization completed successfully")
+    def __init__(self, config, logger):
+        self.config = config
+        self.logger = logger
+        print("Debug: Entering CreditAgricoleClient initialization")
+    
+        self.department = self.config.get('CreditAgricole', 'department')
+        print(f"Debug: Department value: '{self.department}'")
+    
+        if self.department not in CA_REGIONS:
+            print(f"Debug: Available regions: {list(CA_REGIONS.keys())}")
+            self.logger.error(f"Invalid department: {self.department}")
+            raise ValueError(f"Invalid department: {self.department}")
+    
+        self.region = CA_REGIONS[self.department]
+        print(f"Debug: Region determined: '{self.region}'")
+    
+        self.username = self.config.get('CreditAgricole', 'username')
+        self.password = self.config.get('CreditAgricole', 'password')
+    
+        if not self.username or not self.password:
+            self.logger.error("Missing username or password")
+            raise ValueError("Missing username or password")
+    
+        print("Debug: CreditAgricoleClient initialization completed successfully")
 
 
     def validate(self):
