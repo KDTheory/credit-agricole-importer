@@ -1,3 +1,8 @@
+# /!\ DISCLAIMER /!\
+
+This code is not mine, this is a fork from https://github.com/Royalphax/credit-agricole-importer.git, the intend of this repo is to have the code in docker
+
+
 ![python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/royalphax/credit-agricole-importer?color=brightgreen)
 ![GitHub Repo stars](https://img.shields.io/github/stars/royalphax/credit-agricole-importer?color=yellow)
