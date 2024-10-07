@@ -66,19 +66,26 @@ class CreditAgricoleClient:
 
     def init_session(self):
         self.log_message("Initializing session")
-        login_url = f"{self.base_url}/particulier/acceder-a-mes-comptes.html"
+        login_url = urljoin(self.base_url, "particulier/acceder-a-mes-comptes.html")
         
         # Step 1: Get the login page
-        response = self.session.get(login_url, headers=self.headers)
+        response = self.session.get(login_url, headers=self.headers, allow_redirects=True)
         if response.status_code != 200:
             self.log_message(f"Failed to load login page. Status code: {response.status_code}", logging.ERROR)
+            self.log_message(f"Response content: {response.text[:500]}...", logging.DEBUG)
             raise ValueError("Failed to load login page")
+
+        # Log the final URL after potential redirections
+        self.log_message(f"Final URL: {response.url}", logging.DEBUG)
 
         # Step 2: Extract CSRF token
         self.csrf_token = self.extract_csrf_token(response.text)
         if not self.csrf_token:
             self.log_message("Failed to extract CSRF token", logging.ERROR)
+            self.log_message(f"Response content: {response.text[:500]}...", logging.DEBUG)
             raise ValueError("CSRF token not found")
+
+        self.log_message(f"CSRF token extracted: {self.csrf_token[:10]}...")
 
         # Step 3: Submit username
         username_data = {
@@ -106,7 +113,9 @@ class CreditAgricoleClient:
         patterns = [
             r'name="csrf_token".*?value="([^"]+)"',
             r'data-csrf-token="([^"]+)"',
-            r'csrf-token\s*:\s*["\']([^"\']+)["\']'
+            r'csrf-token\s*:\s*["\']([^"\']+)["\']',
+            r'<input[^>]*name="_csrf_token"[^>]*value="([^"]*)"',
+            r'<meta name="csrf-token" content="([^"]*)"'
         ]
         for pattern in patterns:
             match = re.search(pattern, html_content, re.DOTALL | re.IGNORECASE)
