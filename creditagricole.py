@@ -44,6 +44,18 @@ class CreditAgricoleClient:
         }
         self.csrf_token = None
         
+    def validate(self):
+            """
+            Valide les informations d'identification et la configuration.
+            """
+            if not self.username or not self.password:
+                self.logger.error("Username or password is missing")
+                raise ValueError("Username or password is missing")
+            
+            if not self.region:
+                self.logger.error("Region is not set")
+                raise ValueError("Region is not set")
+                
         self.logger.info(f"Initialized CreditAgricoleClient for region: {self.region}")
 
     def login(self):
