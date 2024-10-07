@@ -62,38 +62,18 @@ class CreditAgricoleClient:
     def validate(self):
         print("Debug: Entering validate method")
         
-        # Validation du département
-        department = self.config.get('CreditAgricole', 'department', fallback=None)
-        print(f"Debug: Raw department value: '{department}'")
-        
-        if department is not None:
-            department = department.strip()
-        
-        print(f"Debug: Stripped department value: '{department}'")
-        
-        if not department or department not in DEPARTMENTS_TO_CA_REGIONS:
-            self.logger.error("Please set a valid bank account department.")
-            raise Exception("Please set a valid bank account department.")
-        
-        self.department = department
-        self.region = DEPARTMENTS_TO_CA_REGIONS[department]
-        print(f"Debug: Department validation passed with value: '{self.department}', Region: '{self.region}'")
-    
-        # Validation du nom d'utilisateur
-        if not self.config.get('CreditAgricole', 'username'):
+        # Vérification du nom d'utilisateur
+        if not self.username:
             self.logger.error("Please set your bank account username.")
-            raise Exception("Please set your bank account username.")
+            raise ValueError("Please set your bank account username.")
     
-        # Validation du mot de passe
-        if not self.config.get('CreditAgricole', 'password'):
+        # Vérification du mot de passe
+        if not self.password:
             self.logger.error("Please set your bank account password.")
-            raise Exception("Please set your bank account password.")
-    
-        # Assignation du nom d'utilisateur et du mot de passe
-        self.username = self.config.get('CreditAgricole', 'username')
-        self.password = self.config.get('CreditAgricole', 'password')
+            raise ValueError("Please set your bank account password.")
     
         print("Debug: Validation completed successfully")
+
 
 
 
