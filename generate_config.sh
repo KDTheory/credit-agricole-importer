@@ -36,6 +36,10 @@ update_section "FireflyIII" "access_token" "${FIREFLY_III_ACCESS_TOKEN}"
 update_section "CreditAgricole" "username" "${CREDIT_AGRICOLE_USERNAME}"
 update_section "CreditAgricole" "password" "${CREDIT_AGRICOLE_PASSWORD}"
 
+# Ajouter la section AutoRenameTransaction
+update_section "AutoRenameTransaction" "enabled" "${AUTO_RENAME_ENABLED:-false}"
+update_section "AutoRenameTransaction" "rules" "${AUTO_RENAME_RULES:-}"
+
 # Afficher le contenu du fichier de configuration (pour le débogage)
 echo "Contenu du fichier de configuration :"
 cat "$CONFIG_FILE"
