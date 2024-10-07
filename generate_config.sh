@@ -32,7 +32,9 @@ update_section "FireflyIII" "access_token" "${FIREFLY_III_ACCESS_TOKEN}"
 # CreditAgricole
 update_section "CreditAgricole" "username" "${CREDIT_AGRICOLE_USERNAME}"
 update_section "CreditAgricole" "password" "${CREDIT_AGRICOLE_PASSWORD}"
-update_section "CreditAgricole" "department" "${CREDIT_AGRICOLE_DEPARTMENT:-toulouse31}"
+DEPARTMENT="${CREDIT_AGRICOLE_DEPARTMENT:-31}"
+echo "Debug: Department value to be set: $DEPARTMENT"
+update_section "CreditAgricole" "department" "${DEPARTMENT}"
 
 # AutoRenameTransaction
 update_section "AutoRenameTransaction" "enabled" "${AUTO_RENAME_ENABLED:-false}"
