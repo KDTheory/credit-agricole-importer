@@ -61,6 +61,9 @@ class CreditAgricoleClient:
 
         print("Debug: CreditAgricoleClient initialization completed successfully")
 
+        self.check_url()  # Call check_url here
+        self.init_session()  # Call init_session here
+
     def validate(self):
         print("Debug: Entering validate method")
         
@@ -88,10 +91,6 @@ class CreditAgricoleClient:
         except requests.exceptions.RequestException as e:
             print(f"Debug: Error checking URL: {str(e)}")
     
-    # Appelez cette méthode avant init_session dans votre code principal
-    ca_cli.check_url()
-    ca_cli.init_session()
-
     def init_session(self):
         print("Debug: Entering init_session method")
         print(f"Debug: Attempting to connect to URL: {self.url}")
