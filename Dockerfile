@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Créer le fichier de configuration
-RUN echo "[GlobalSettings]\nusername=${CREDIT_AGRICOLE_USERNAME}\npassword=${CREDIT_AGRICOLE_PASSWORD}\n" > config.ini
+RUN echo "[GlobalSettings]\nusername=${CREDIT_AGRICOLE_USERNAME}\npassword=${CREDIT_AGRICOLE_PASSWORD}\n" > config.ini && \
+    echo "[CreditAgricole]\n# Ajoutez ici les options spécifiques à Crédit Agricole\n" >> config.ini
 
 # Commande pour exécuter le script
 CMD ["python", "main.py"]
