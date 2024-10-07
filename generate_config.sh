@@ -32,6 +32,7 @@ update_section "FireflyIII" "access_token" "${FIREFLY_III_ACCESS_TOKEN}"
 # CreditAgricole
 update_section "CreditAgricole" "username" "${CREDIT_AGRICOLE_USERNAME}"
 update_section "CreditAgricole" "password" "${CREDIT_AGRICOLE_PASSWORD}"
+update_section "CreditAgricole" "department" "${CREDIT_AGRICOLE_DEPARTMENT}"
 
 # AutoRenameTransaction
 update_section "AutoRenameTransaction" "enabled" "${AUTO_RENAME_ENABLED:-false}"
