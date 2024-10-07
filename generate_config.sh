@@ -51,8 +51,8 @@ update_section "AutoAssignTags" "enabled" "${AUTO_ASSIGN_TAGS_ENABLED:-false}"
 update_section "AutoAssignTags" "rules" "${AUTO_ASSIGN_TAGS_RULES:-}"
 
 # AutoAssignAccount
-update_section "AutoAssignAccount" "enabled" "${AUTO_ASSIGN_ACCOUNT_ENABLED:-false}"
-update_section "AutoAssignAccount" "rules" "${AUTO_ASSIGN_ACCOUNT_RULES:-}"
+# update_section "AutoAssignAccount" "enabled" "${AUTO_ASSIGN_ACCOUNT_ENABLED:-false}"
+# update_section "AutoAssignAccount" "rules" "${AUTO_ASSIGN_ACCOUNT_RULES:-}"
 
 # Logging
 update_section "Logging" "level" "${LOGGING_LEVEL:-INFO}"
