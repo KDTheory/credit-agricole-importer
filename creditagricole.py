@@ -22,17 +22,31 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 class CreditAgricoleClient:
 
-    def __init__(self, config, logger):
-        self.config = config
-        self.logger = logger
-        self.department = BANK_DEPARTMENT_DEFAULT
-        self.account_id = BANK_ACCOUNT_ID_DEFAULT
-        self.password = BANK_PASSWORD_DEFAULT
-        self.enabled_accounts = IMPORT_ACCOUNT_ID_LIST_DEFAULT
-        self.get_transactions_period = GET_TRANSACTIONS_PERIOD_DAYS_DEFAULT
-        self.max_transactions = MAX_TRANSACTIONS_PER_GET_DEFAULT
-        self.region_id = None
-        self.session = None
+def __init__(self, config, logger):
+    self.config = config
+    self.logger = logger
+    print("Debug: Entering CreditAgricoleClient initialization")
+
+    self.department = self.config.get('CreditAgricole', 'department')
+    print(f"Debug: Department value: '{self.department}'")
+
+    if self.department not in CA_REGIONS:
+        print(f"Debug: Available regions: {list(CA_REGIONS.keys())}")
+        self.logger.error(f"Invalid department: {self.department}")
+        raise ValueError(f"Invalid department: {self.department}")
+
+    self.region = CA_REGIONS[self.department]
+    print(f"Debug: Region determined: '{self.region}'")
+
+    self.username = self.config.get('CreditAgricole', 'username')
+    self.password = self.config.get('CreditAgricole', 'password')
+
+    if not self.username or not self.password:
+        self.logger.error("Missing username or password")
+        raise ValueError("Missing username or password")
+
+    print("Debug: CreditAgricoleClient initialization completed successfully")
+
 
     def validate(self):
         print("Debug: Entering validate method")
