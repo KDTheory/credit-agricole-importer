@@ -26,7 +26,13 @@ class CreditAgricoleClient:
         self.config = config
         self.logger = logger
         self.session = requests.Session()
-        self.base_url = f"https://www.credit-agricole.fr/ca-{config.get('CreditAgricole', 'region')}/"
+        
+        self.department = config.get('CreditAgricole', 'department')
+        self.region = DEPARTMENTS_TO_CA_REGIONS.get(self.department)
+        if not self.region:
+            raise ValueError(f"Invalid department: {self.department}. Please use a valid department code.")
+        
+        self.base_url = f"https://www.credit-agricole.fr/ca-{self.region}/"
         self.username = config.get('CreditAgricole', 'username')
         self.password = config.get('CreditAgricole', 'password')
         self.headers = {
@@ -35,6 +41,8 @@ class CreditAgricoleClient:
             'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
         }
         self.csrf_token = None
+        
+        self.logger.info(f"Initialized CreditAgricoleClient for region: {self.region}")
 
     def login(self):
         self.logger.info("Initiating login process")
