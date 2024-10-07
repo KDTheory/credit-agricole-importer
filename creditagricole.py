@@ -27,23 +27,10 @@ class CreditAgricoleClient:
     def __init__(self, config, logger):
         self.config = config
         self.logger = logger
-        self.session = requests.Session()
-        
         self.department = config.get('CreditAgricole', 'department')
-        self.region = DEPARTMENTS_TO_CA_REGIONS.get(self.department)
-        if not self.region:
-            self.log_message("Department {} not found in mapping. Using default region.".format(self.department))
-            self.region = 'toulouse31'  # Default to Toulouse 31
-        
-        self.base_url = f"https://www.credit-agricole.fr/ca-{self.region}"
         self.username = config.get('CreditAgricole', 'username')
-        self.password = config.get('CreditAgricole', 'password')
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
-        }
-        self.csrf_token = None
+        self.password = self.parse_password(config.get('CreditAgricole', 'password'))
+        self.session = None
 
     def log_message(self, message, level=logging.INFO):
         if hasattr(self.logger, 'log'):
@@ -52,62 +39,43 @@ class CreditAgricoleClient:
             self.logger.info(message)
         else:
             print(message)  # Fallback to print if no suitable logging method is found
+            
+    def parse_password(self, password_string):
+        # Convertit la chaîne de caractères du mot de passe en liste d'entiers
+        return [int(char) for char in password_string]
+        
+    def init_session(self):
+        try:
+            self.session = Authenticator(
+                username=self.username,
+                password=self.password,
+                department=int(self.department)
+            )
+            self.logger.info("Session initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize session: {str(e)}")
+            raise
 
     def validate(self):
-        """
-        Valide les informations d'identification et la configuration.
-        """
-        if not self.username or not self.password:
-            self.log_message("Username or password is missing", logging.ERROR)
-            raise ValueError("Username or password is missing")
-        
-        if not self.region:
-            self.log_message("Region is not set", logging.ERROR)
-            raise ValueError("Region is not set")
+        if not self.username or not self.password or not self.department:
+            self.logger.error("Missing credentials")
+            raise ValueError("Username, password, or department is missing")
+        self.logger.info("Credentials validated")
 
-    def init_session(self):
-        self.log_message("Initializing session")
-        login_url = urljoin(self.base_url, "particulier/acceder-a-mes-comptes.html")
-        
-        # Step 1: Get the login page
-        response = self.session.get(login_url, headers=self.headers, allow_redirects=True)
-        if response.status_code != 200:
-            self.log_message(f"Failed to load login page. Status code: {response.status_code}", logging.ERROR)
-            self.log_message(f"Response content: {response.text[:500]}...", logging.DEBUG)
-            raise ValueError("Failed to load login page")
+    # Ajoutez d'autres méthodes selon vos besoins, par exemple :
+    def get_accounts(self):
+        if not self.session:
+            raise ValueError("Session not initialized. Call init_session() first.")
+        # Utilisez self.session pour obtenir les informations des comptes
+        # Exemple (à adapter selon l'API de creditagricole_particuliers) :
+        # return self.session.get_accounts()
 
-        # Log the final URL after potential redirections
-        self.log_message(f"Final URL: {response.url}", logging.DEBUG)
-
-        # Step 2: Extract CSRF token
-        self.csrf_token = self.extract_csrf_token(response.text)
-        if not self.csrf_token:
-            self.log_message("Failed to extract CSRF token", logging.ERROR)
-            self.log_message(f"Response content: {response.text[:500]}...", logging.DEBUG)
-            raise ValueError("CSRF token not found")
-
-        self.log_message(f"CSRF token extracted: {self.csrf_token[:10]}...")
-
-        # Step 3: Submit username
-        username_data = {
-            "j_username": self.username,
-            "csrf_token": self.csrf_token
-        }
-        response = self.session.post(login_url, data=username_data, headers=self.headers)
-        
-        # Step 4: Submit password (simulating keypad clicks)
-        password_data = {
-            "j_password": self.encode_password(),
-            "j_numeric_grid_selection": "true",
-            "csrf_token": self.csrf_token
-        }
-        response = self.session.post(login_url, data=password_data, headers=self.headers)
-        
-        if "Votre identification a échoué" in response.text:
-            self.log_message("Login failed: Invalid credentials", logging.ERROR)
-            raise ValueError("Invalid credentials")
-        
-        self.log_message("Session initialized successfully")
+    def get_transactions(self, account_id):
+        if not self.session:
+            raise ValueError("Session not initialized. Call init_session() first.")
+        # Utilisez self.session pour obtenir les transactions
+        # Exemple (à adapter selon l'API de creditagricole_particuliers) :
+        # return self.session.get_transactions(account_id)
 
     def extract_csrf_token(self, html_content):
         # Try different patterns to extract CSRF token
