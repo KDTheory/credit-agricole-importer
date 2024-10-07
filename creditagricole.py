@@ -118,11 +118,24 @@ class CreditAgricoleClient:
             response = self.session.post(
                 f"{self.url}/particulier/acceder-a-mes-comptes.html",
                 json=data,
-                timeout=30  # Ajout d'un timeout
+                headers=headers,
+                timeout=30,
+                allow_redirects=True  # Suivre les redirections
             )
+            print(f"Debug: Login request sent, final URL: {response.url}")
             print(f"Debug: Login request sent, status code: {response.status_code}")
             print(f"Debug: Response headers: {response.headers}")
-            print(f"Debug: Response content: {response.text[:500]}...")  # Affiche les 500 premiers caractères de la réponse
+            print(f"Debug: Full Response content: {response.text}")
+
+            # Recherche du jeton CSRF
+            csrf_token = re.search(r'name="csrf_token".*?value="([^"]+)"', response.text, re.DOTALL)
+            if csrf_token:
+                self.csrf_token = csrf_token.group(1)
+                print(f"Debug: CSRF token extracted: {self.csrf_token[:10]}...")
+            else:
+                print("Debug: CSRF token not found in the response")
+                print("Debug: Searching for alternative authentication elements...")
+            
         except requests.exceptions.RequestException as e:
             error_msg = f"Request failed: {str(e)}"
             self.logger.error(error_msg)
