@@ -13,5 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copier le reste de l'application
 COPY . .
 
+# Créer le fichier de configuration config.ini
+RUN echo "[default]\nusername = ${CREDIT_AGRICOLE_USERNAME}\npassword = ${CREDIT_AGRICOLE_PASSWORD}" > config.ini
+
 # Commande pour exécuter le script
 CMD ["python", "main.py"]
