@@ -6,6 +6,7 @@ import urllib.parse
 import requests
 import re
 import logging
+from urllib.parse import urljoin
 
 
 class CreditAgricoleAuthenticator(Authenticator):
