@@ -1,15 +1,4 @@
 import configparser
-config = configparser.ConfigParser()
-config.read('/app/config.ini')
-print("Configuration file content:")
-print(config.sections())
-for section in config.sections():
-    print(f"[{section}]")
-    for key, value in config[section].items():
-        print(f"{key} = {value}")
-
-
-import configparser
 import os
 import time
 
