@@ -22,7 +22,8 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 class CreditAgricoleClient:
 
-    def __init__(self, logger):
+    def __init__(self, config, logger):
+        self.config = config
         self.logger = logger
         self.department = BANK_DEPARTMENT_DEFAULT
         self.account_id = BANK_ACCOUNT_ID_DEFAULT
