@@ -23,7 +23,7 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 
 class CreditAgricoleClient:
-        def __init__(self, config, logger):
+    def __init__(self, config, logger):
         self.config = config
         self.logger = logger
         self.session = requests.Session()
