@@ -26,161 +26,88 @@ class CreditAgricoleClient:
         self.config = config
         self.logger = logger
         self.session = requests.Session()
-        print("Debug: Entering CreditAgricoleClient initialization")
-
-        self.department = self.config.get('CreditAgricole', 'department')
-        print(f"Debug: Department value: '{self.department}'")
-
-        # Conversion du département en région
-        department_to_region = {
-            '31': 'toulouse31',
-            # Ajoutez d'autres correspondances si nécessaire
+        self.base_url = f"https://www.credit-agricole.fr/ca-{config.get('CreditAgricole', 'region')}/"
+        self.username = config.get('CreditAgricole', 'username')
+        self.password = config.get('CreditAgricole', 'password')
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
         }
-
-        self.region = department_to_region.get(self.department)
-        if not self.region:
-            print(f"Debug: Available regions: {list(CA_REGIONS.keys())}")
-            self.logger.error(f"Invalid department: {self.department}")
-            raise ValueError(f"Invalid department: {self.department}. Please use a valid region code.")
-
-        print(f"Debug: Region determined: '{self.region}'")
-
-        if self.region not in CA_REGIONS:
-            self.logger.error(f"Invalid region: {self.region}")
-            raise ValueError(f"Invalid region: {self.region}")
-
-        self.username = self.config.get('CreditAgricole', 'username')
-        self.password = self.config.get('CreditAgricole', 'password')
-
-        if not self.username or not self.password:
-            self.logger.error("Missing username or password")
-            raise ValueError("Missing username or password")
-
-        self.url = f"https://www.credit-agricole.fr/ca-{self.region}/"
-        print(f"Debug: URL set to: {self.url}")
         self.csrf_token = None
 
-        print("Debug: CreditAgricoleClient initialization completed successfully")
-
-        self.check_url()  # Call check_url here
-        self.init_session()  # Call init_session here
-
-    def validate(self):
-        print("Debug: Entering validate method")
+    def login(self):
+        self.logger.info("Initiating login process")
+        login_url = urljoin(self.base_url, "particulier/acceder-a-mes-comptes.html")
         
-        # Vérification du nom d'utilisateur
-        if not self.username:
-            self.logger.error("Please set your bank account username.")
-            raise ValueError("Please set your bank account username.")
-
-        # Vérification du mot de passe
-        if not self.password:
-            self.logger.error("Please set your bank account password.")
-            raise ValueError("Please set your bank account password.")
-
-        print("Debug: Validation completed successfully")
+        # Step 1: Get the login page and extract CSRF token
+        response = self.session.get(login_url, headers=self.headers)
+        self.csrf_token = self.extract_csrf_token(response.text)
         
-    def check_url(self):
-        print(f"Debug: Checking URL: {self.url}")
-        try:
-            response = requests.get(self.url, timeout=10)
-            print(f"Debug: URL check status code: {response.status_code}")
-            if response.status_code == 200:
-                print("Debug: URL is accessible")
-            else:
-                print(f"Debug: URL returned unexpected status code: {response.status_code}")
-        except requests.exceptions.RequestException as e:
-            print(f"Debug: Error checking URL: {str(e)}")
-    
-    def init_session(self):
-        print("Debug: Entering init_session method")
-        print(f"Debug: Attempting to connect to URL: {self.url}")
-        
-        password_list = []
-        for char in self.password:
-            if char.isdigit():
-                password_list.append(int(char))
-            else:
-                password_list.append(ord(char))
-        print(f"Debug: Password processed, length: {len(password_list)}")
-    
-        data = {
-            "j_password": password_list,
+        # Step 2: Submit username
+        username_data = {
             "j_username": self.username,
-            "j_numeric_grid_selection": "true"
+            "csrf_token": self.csrf_token
         }
-    
-        print("Debug: Preparing to send login request")
-        headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        response = self.session.post(login_url, data=username_data, headers=self.headers)
+        
+        # Step 3: Submit password (simulating keypad clicks)
+        password_data = {
+            "j_password": self.encode_password(),
+            "j_numeric_grid_selection": "true",
+            "csrf_token": self.csrf_token
         }
-        try:
-            response = self.session.post(
-                f"{self.url}/particulier/acceder-a-mes-comptes.html",
-                json=data,
-                headers=headers,
-                timeout=30,
-                allow_redirects=True  # Suivre les redirections
-            )
-            print(f"Debug: Login request sent, final URL: {response.url}")
-            print(f"Debug: Login request sent, status code: {response.status_code}")
-            print(f"Debug: Response headers: {response.headers}")
-            print(f"Debug: Full Response content: {response.text}")
-
-            # Recherche du jeton CSRF
-            csrf_token = re.search(r'name="csrf_token".*?value="([^"]+)"', response.text, re.DOTALL)
-            if csrf_token:
-                self.csrf_token = csrf_token.group(1)
-                print(f"Debug: CSRF token extracted: {self.csrf_token[:10]}...")
-            else:
-                print("Debug: CSRF token not found in the response")
-                print("Debug: Searching for alternative authentication elements...")
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Request failed: {str(e)}"
-            self.logger.error(error_msg)
-            raise Exception(error_msg)
-    
-        if response.status_code != 200:
-            error_msg = f"Login failed with status code: {response.status_code}"
-            self.logger.error(error_msg)
-            raise Exception(error_msg)
-
-        print("Debug: Checking for successful login")
+        response = self.session.post(login_url, data=password_data, headers=self.headers)
+        
         if "Votre identification a échoué" in response.text:
-            error_msg = "Login failed: Invalid credentials"
-            self.logger.error(error_msg)
-            raise Exception(error_msg)
+            self.logger.error("Login failed: Invalid credentials")
+            return False
+        
+        if "SécuriPass" in response.text or "code reçu par SMS" in response.text:
+            self.logger.info("Additional authentication required (SécuriPass or SMS)")
+            # Implement additional authentication steps here
+            return self.handle_additional_auth(response)
+        
+        self.logger.info("Login successful")
+        return True
 
-        print("Debug: Login successful, extracting CSRF token")
-        csrf_token = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
-        if not csrf_token:
-            error_msg = "Failed to extract CSRF token"
-            self.logger.error(error_msg)
-            raise Exception(error_msg)
+    def extract_csrf_token(self, html_content):
+        match = re.search(r'name="csrf_token".*?value="([^"]+)"', html_content, re.DOTALL)
+        if match:
+            return match.group(1)
+        self.logger.error("Failed to extract CSRF token")
+        return None
 
-        self.csrf_token = csrf_token.group(1)
-        print(f"Debug: CSRF token extracted: {self.csrf_token[:10]}...")  # Affiche les 10 premiers caractères pour la sécurité
+    def encode_password(self):
+        # This method should be adapted based on how the bank's virtual keypad works
+        # For now, we'll just return the password as a comma-separated list of ASCII values
+        return ','.join(str(ord(char)) for char in self.password)
 
-        print("Debug: init_session completed successfully")
+    def handle_additional_auth(self, response):
+        # Implement SécuriPass or SMS authentication here
+        # This will depend on the specific implementation of the bank
+        self.logger.warning("Additional authentication not implemented")
+        return False
 
     def get_accounts(self):
-        accounts = []
-        for account in Accounts(session=self.session):
-            if account.numeroCompte in [x.strip() for x in self.enabled_accounts.split(",")]:
-                accounts.append(account)
-        return accounts
+        # Implement method to fetch account information
+        pass
 
     def get_transactions(self, account_id):
-        account = Accounts(session=self.session).search(num=account_id)
+        # Implement method to fetch transactions for a specific account
+        pass
 
-        current_date = datetime.today()
-        previous_date = current_date - timedelta(days=int(self.get_transactions_period))
-        date_stop_ = current_date.strftime('%Y-%m-%d')
-        date_start_ = previous_date.strftime('%Y-%m-%d')
+    def logout(self):
+        logout_url = urljoin(self.base_url, "particulier/deconnexion.html")
+        self.session.get(logout_url, headers=self.headers)
+        self.logger.info("Logged out successfully")
 
-        return [op.descr for op in account.get_operations(count=int(self.max_transactions), date_start=date_start_, date_stop=date_stop_)]
-
+    def check_connection(self):
+        try:
+            response = self.session.get(self.base_url, headers=self.headers)
+            return response.status_code == 200
+        except requests.RequestException:
+            return False
 
 class CreditAgricoleRegion:
 
