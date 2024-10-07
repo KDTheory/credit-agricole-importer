@@ -46,12 +46,13 @@ class CreditAgricoleClient:
         
     def init_session(self):
         try:
+            self.logger.log(logging.DEBUG, f"Initializing session with username: {self.username}, department: {self.department}")
             self.session = Authenticator(
                 username=self.username,
                 password=self.password,
                 department=int(self.department)
             )
-            self.logger.info("Session initialized successfully")
+            self.logger.log("Session initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize session: {str(e)}")
             raise
