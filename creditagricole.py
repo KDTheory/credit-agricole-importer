@@ -21,43 +21,44 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 
 class CreditAgricoleClient:
-
     def __init__(self, config, logger):
         self.config = config
         self.logger = logger
+        self.session = requests.Session()
         print("Debug: Entering CreditAgricoleClient initialization")
-    
+
         self.department = self.config.get('CreditAgricole', 'department')
         print(f"Debug: Department value: '{self.department}'")
-    
+
         # Conversion du département en région
         department_to_region = {
             '31': 'toulouse31',
             # Ajoutez d'autres correspondances si nécessaire
         }
-    
+
         self.region = department_to_region.get(self.department)
         if not self.region:
             print(f"Debug: Available regions: {list(CA_REGIONS.keys())}")
             self.logger.error(f"Invalid department: {self.department}")
             raise ValueError(f"Invalid department: {self.department}. Please use a valid region code.")
-    
+
         print(f"Debug: Region determined: '{self.region}'")
-    
+
         if self.region not in CA_REGIONS:
             self.logger.error(f"Invalid region: {self.region}")
             raise ValueError(f"Invalid region: {self.region}")
-    
+
         self.username = self.config.get('CreditAgricole', 'username')
         self.password = self.config.get('CreditAgricole', 'password')
-    
+
         if not self.username or not self.password:
             self.logger.error("Missing username or password")
             raise ValueError("Missing username or password")
-    
+
+        self.url = f"https://www.{self.region}.credit-agricole.fr"
+        self.csrf_token = None
+
         print("Debug: CreditAgricoleClient initialization completed successfully")
-
-
 
     def validate(self):
         print("Debug: Entering validate method")
@@ -66,16 +67,13 @@ class CreditAgricoleClient:
         if not self.username:
             self.logger.error("Please set your bank account username.")
             raise ValueError("Please set your bank account username.")
-    
+
         # Vérification du mot de passe
         if not self.password:
             self.logger.error("Please set your bank account password.")
             raise ValueError("Please set your bank account password.")
-    
+
         print("Debug: Validation completed successfully")
-
-
-
 
     def init_session(self):
         print("Debug: Entering init_session method")
@@ -85,45 +83,44 @@ class CreditAgricoleClient:
             if char.isdigit():
                 password_list.append(int(char))
             else:
-                password_list.append(ord(char))  # Utilise le code ASCII pour les non-chiffres
+                password_list.append(ord(char))
         print(f"Debug: Password processed, length: {len(password_list)}")
-    
+
         data = {
             "j_password": password_list,
             "j_username": self.username,
             "j_numeric_grid_selection": "true"
         }
-    
+
         print("Debug: Preparing to send login request")
         response = self.session.post(
             f"{self.url}/particulier/acceder-a-mes-comptes.html",
             json=data
         )
         print(f"Debug: Login request sent, status code: {response.status_code}")
-    
+
         if response.status_code != 200:
             error_msg = f"Login failed with status code: {response.status_code}"
             self.logger.error(error_msg)
             raise Exception(error_msg)
-    
+
         print("Debug: Checking for successful login")
         if "Votre identification a échoué" in response.text:
             error_msg = "Login failed: Invalid credentials"
             self.logger.error(error_msg)
             raise Exception(error_msg)
-    
+
         print("Debug: Login successful, extracting CSRF token")
         csrf_token = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
         if not csrf_token:
             error_msg = "Failed to extract CSRF token"
             self.logger.error(error_msg)
             raise Exception(error_msg)
-    
+
         self.csrf_token = csrf_token.group(1)
         print(f"Debug: CSRF token extracted: {self.csrf_token[:10]}...")  # Affiche les 10 premiers caractères pour la sécurité
-    
-        print("Debug: init_session completed successfully")
 
+        print("Debug: init_session completed successfully")
 
     def get_accounts(self):
         accounts = []
