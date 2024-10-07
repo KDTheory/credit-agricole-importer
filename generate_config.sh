@@ -51,16 +51,16 @@ update_section "AutoAssignTags" "enabled" "${AUTO_ASSIGN_TAGS_ENABLED:-false}"
 update_section "AutoAssignTags" "rules" "${AUTO_ASSIGN_TAGS_RULES:-}"
 
 # AutoAssignAccount
-# update_section "AutoAssignAccount" "enabled" "${AUTO_ASSIGN_ACCOUNT_ENABLED:-false}"
-# update_section "AutoAssignAccount" "rules" "${AUTO_ASSIGN_ACCOUNT_RULES:-}"
+update_section "AutoAssignAccount" "enabled" "${AUTO_ASSIGN_ACCOUNT_ENABLED:-false}"
+update_section "AutoAssignAccount" "rules" "${AUTO_ASSIGN_ACCOUNT_RULES:-}"
 
 # Logging
-update_section "Logging" "level" "${LOGGING_LEVEL:-INFO}"
+update_section "Logging" "level" "${LOGGING_LEVEL:-DEBUG}"
 update_section "Logging" "file" "${LOGGING_FILE:-/app/importer.log}"
 
 # Accounts
-update_section "Accounts" "mapping" "${ACCOUNTS_MAPPING}"
-update_section "Accounts" "department" "${CREDIT_AGRICOLE_DEPARTMENT:-31}"
+# update_section "Accounts" "mapping" "${ACCOUNTS_MAPPING}"
+# update_section "Accounts" "department" "${CREDIT_AGRICOLE_DEPARTMENT:-31}"
 
 echo "Contenu du fichier de configuration :"
 cat "$CONFIG_FILE"
