@@ -55,7 +55,8 @@ class CreditAgricoleClient:
             self.logger.error("Missing username or password")
             raise ValueError("Missing username or password")
 
-        self.url = f"https://www.{self.region}.credit-agricole.fr"
+        self.url = f"https://www.credit-agricole.fr/{self.region}"
+        print(f"Debug: URL set to: {self.url}")
         self.csrf_token = None
 
         print("Debug: CreditAgricoleClient initialization completed successfully")
@@ -77,6 +78,7 @@ class CreditAgricoleClient:
 
     def init_session(self):
         print("Debug: Entering init_session method")
+        print(f"Debug: Attempting to connect to URL: {self.url}")
         
         password_list = []
         for char in self.password:
