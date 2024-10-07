@@ -25,16 +25,16 @@ class CreditAgricoleAuthenticator(Authenticator):
 class CreditAgricoleClient:
     def __init__(self, config, logger):
         self.config = config
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger
         self.session = requests.Session()
         
         self.department = config.get('CreditAgricole', 'department')
         self.region = DEPARTMENTS_TO_CA_REGIONS.get(self.department)
         if not self.region:
             self.logger.warning(f"Department {self.department} not found in mapping. Using default region.")
-            self.region = 'toulouse31'  # Utiliser une région par défaut
+            self.region = 'toulouse31'  # Default to Toulouse 31
         
-        self.base_url = f"https://www.credit-agricole.fr/ca-{self.region}/"
+        self.base_url = f"https://www.credit-agricole.fr/ca-{self.region}"
         self.username = config.get('CreditAgricole', 'username')
         self.password = config.get('CreditAgricole', 'password')
         self.headers = {
@@ -43,79 +43,31 @@ class CreditAgricoleClient:
             'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
         }
         self.csrf_token = None
-        
-    def validate(self):
-        """
-        Valide les informations d'identification et la configuration.
-        """
-        if not self.username or not self.password:
-            self.logger.error("Username or password is missing")
-            raise ValueError("Username or password is missing")
-        
-        if not self.region:
-            self.logger.error("Region is not set")
-            raise ValueError("Region is not set")
-                
-        self.logger.info(f"Initialized CreditAgricoleClient for region: {self.region}")
-
-    def login(self):
-        self.logger.info("Initiating login process")
-        login_url = urljoin(self.base_url, "particulier/acceder-a-mes-comptes.html")
-        
-        # Step 1: Get the login page and extract CSRF token
-        response = self.session.get(login_url, headers=self.headers)
-        self.csrf_token = self.extract_csrf_token(response.text)
-        
-        # Step 2: Submit username
-        username_data = {
-            "j_username": self.username,
-            "csrf_token": self.csrf_token
-        }
-        response = self.session.post(login_url, data=username_data, headers=self.headers)
-        
-        # Step 3: Submit password (simulating keypad clicks)
-        password_data = {
-            "j_password": self.encode_password(),
-            "j_numeric_grid_selection": "true",
-            "csrf_token": self.csrf_token
-        }
-        response = self.session.post(login_url, data=password_data, headers=self.headers)
-        
-        if "Votre identification a échoué" in response.text:
-            self.logger.error("Login failed: Invalid credentials")
-            return False
-        
-        if "SécuriPass" in response.text or "code reçu par SMS" in response.text:
-            self.logger.info("Additional authentication required (SécuriPass or SMS)")
-            # Implement additional authentication steps here
-            return self.handle_additional_auth(response)
-        
-        self.logger.info("Login successful")
-        return True
 
     def init_session(self):
-        """
-        Initialise la session et effectue la connexion au site du Crédit Agricole.
-        """
         self.logger.info("Initializing session")
         login_url = f"{self.base_url}/particulier/acceder-a-mes-comptes.html"
         
-        # Étape 1 : Obtenir la page de connexion et extraire le jeton CSRF
+        # Step 1: Get the login page
         response = self.session.get(login_url, headers=self.headers)
+        if response.status_code != 200:
+            self.logger.error(f"Failed to load login page. Status code: {response.status_code}")
+            raise ValueError("Failed to load login page")
+
+        # Step 2: Extract CSRF token
         self.csrf_token = self.extract_csrf_token(response.text)
-        
         if not self.csrf_token:
             self.logger.error("Failed to extract CSRF token")
             raise ValueError("CSRF token not found")
 
-        # Étape 2 : Soumettre le nom d'utilisateur
+        # Step 3: Submit username
         username_data = {
             "j_username": self.username,
             "csrf_token": self.csrf_token
         }
         response = self.session.post(login_url, data=username_data, headers=self.headers)
         
-        # Étape 3 : Soumettre le mot de passe (simulation des clics sur le clavier virtuel)
+        # Step 4: Submit password (simulating keypad clicks)
         password_data = {
             "j_password": self.encode_password(),
             "j_numeric_grid_selection": "true",
@@ -128,13 +80,22 @@ class CreditAgricoleClient:
             raise ValueError("Invalid credentials")
         
         self.logger.info("Session initialized successfully")
-        
+
     def extract_csrf_token(self, html_content):
-        match = re.search(r'name="csrf_token".*?value="([^"]+)"', html_content, re.DOTALL)
-        return match.group(1) if match else None
+        # Try different patterns to extract CSRF token
+        patterns = [
+            r'name="csrf_token".*?value="([^"]+)"',
+            r'data-csrf-token="([^"]+)"',
+            r'csrf-token\s*:\s*["\']([^"\']+)["\']'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, html_content, re.DOTALL | re.IGNORECASE)
+            if match:
+                return match.group(1)
+        return None
 
     def encode_password(self):
-        # Cette méthode doit être adaptée en fonction de la façon dont le site encode les clics sur le clavier virtuel
+        # This method needs to be adapted based on how the bank's virtual keypad works
         return ','.join(str(ord(char)) for char in self.password)
 
     def handle_additional_auth(self, response):
