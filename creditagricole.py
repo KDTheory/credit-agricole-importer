@@ -52,6 +52,18 @@ class CreditAgricoleClient:
         else:
             print(message)  # Fallback to print if no suitable logging method is found
 
+    def validate(self):
+        """
+        Valide les informations d'identification et la configuration.
+        """
+        if not self.username or not self.password:
+            self.log_message("Username or password is missing", logging.ERROR)
+            raise ValueError("Username or password is missing")
+        
+        if not self.region:
+            self.log_message("Region is not set", logging.ERROR)
+            raise ValueError("Region is not set")
+
     def init_session(self):
         self.log_message("Initializing session")
         login_url = f"{self.base_url}/particulier/acceder-a-mes-comptes.html"
