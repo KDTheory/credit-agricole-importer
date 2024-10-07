@@ -30,6 +30,7 @@ class CreditAgricoleClient:
         self.department = config.get('CreditAgricole', 'department')
         self.region = DEPARTMENTS_TO_CA_REGIONS.get(self.department)
         if not self.region:
+            self.logger.error(f"Invalid department: {self.department}")
             raise ValueError(f"Invalid department: {self.department}. Please use a valid department code.")
         
         self.base_url = f"https://www.credit-agricole.fr/ca-{self.region}/"
