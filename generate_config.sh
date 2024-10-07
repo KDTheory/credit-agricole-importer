@@ -32,7 +32,7 @@ update_section "FireflyIII" "access_token" "${FIREFLY_III_ACCESS_TOKEN}"
 # CreditAgricole
 update_section "CreditAgricole" "username" "${CREDIT_AGRICOLE_USERNAME}"
 update_section "CreditAgricole" "password" "${CREDIT_AGRICOLE_PASSWORD}"
-update_section "CreditAgricole" "DEPARTMENT" "${CREDIT_AGRICOLE_DEPARTMENT:-31}"
+update_section "CreditAgricole" "department" "${CREDIT_AGRICOLE_DEPARTMENT:-31}"
 
 # AutoRenameTransaction
 update_section "AutoRenameTransaction" "enabled" "${AUTO_RENAME_ENABLED:-false}"
@@ -60,6 +60,7 @@ update_section "Logging" "file" "${LOGGING_FILE:-/app/importer.log}"
 
 # Accounts
 update_section "Accounts" "mapping" "${ACCOUNTS_MAPPING}"
+update_section "Accounts" "department" "${CREDIT_AGRICOLE_DEPARTMENT:-31}"
 
 echo "Contenu du fichier de configuration :"
 cat "$CONFIG_FILE"
