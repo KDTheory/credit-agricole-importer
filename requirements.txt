@@ -1,5 +1,5 @@
 configparser==6.0.0
 requests==2.31.0
-urllib3==2.1.0
+urllib3>=1.25.3,<2.1.0
 creditagricole-particuliers==0.5.0
 Firefly-III-API-Client==2.0.12.0
