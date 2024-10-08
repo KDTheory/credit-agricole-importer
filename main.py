@@ -30,6 +30,8 @@ configuration = configuration.Configuration(
 )
 configuration.access_token = config.get('FireflyIII', 'personal_access_token')
 
+with firefly_iii_client.ApiClient(configuration) as api_client:
+
 def get_or_create_account(accounts_api, name, type, iban=None):
     try:
         # Try to find the account by name
