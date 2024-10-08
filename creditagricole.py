@@ -35,93 +35,76 @@ class CreditAgricoleClient:
     def parse_password(self, password_string):
         return [int(char) for char in password_string if char.isdigit()]
 
-    def validate_department(self):
-        if not self.department.isdigit() or len(self.department) != 2 or self.department == '00':
-            raise ValueError(f"Invalid department number: {self.department}. It should be a valid two-digit French department number.")
+    def log_message(self, level, message):
+        if hasattr(self.logger, level):
+            getattr(self.logger, level)(message)
+        elif hasattr(self.logger, 'log'):
+            log_levels = {
+                'debug': logging.DEBUG,
+                'info': logging.INFO,
+                'warning': logging.WARNING,
+                'error': logging.ERROR,
+                'critical': logging.CRITICAL
+            }
+            self.logger.log(log_levels.get(level, logging.INFO), message)
+        else:
+            print(f"{level.upper()}: {message}")
+
+    def validate(self):
+        if not self.username or not self.password or not self.department:
+            self.log_message('error', "Missing credentials")
+            raise ValueError("Username, password, or department is missing")
+        if not self.department.isdigit() or len(self.department) != 2:
+            self.log_message('error', f"Invalid department number: {self.department}")
+            raise ValueError(f"Invalid department number: {self.department}. It should be a two-digit number.")
+        self.log_message('info', "Credentials validated")
 
     def init_session(self):
         try:
-            self.validate_department()
-            self.logger.log(logging.INFO, f"Initializing session with username: {self.username}, department: {self.department}")
+            self.log_message('info', f"Initializing session with username: {self.username}, department: {self.department}")
             self.session = Authenticator(
                 username=self.username,
                 password=self.password,
                 department=int(self.department)
             )
-            self.logger.log(logging.INFO, "Session initialized successfully")
-        except ValueError as ve:
-            self.logger.log(logging.ERROR, f"Validation error: {str(ve)}")
-            raise
+            self.log_message('info', "Session initialized successfully")
         except Exception as e:
-            self.logger.log(logging.ERROR, f"Failed to initialize session: {str(e)}")
+            self.log_message('error', f"Failed to initialize session: {str(e)}")
             raise
 
-    def validate(self):
-        if not self.username or not self.password or not self.department:
-            self.logger.error("Missing credentials")
-            raise ValueError("Username, password, or department is missing")
-        self.logger.info("Credentials validated")
-
-    # Ajoutez d'autres méthodes selon vos besoins, par exemple :
     def get_accounts(self):
         if not self.session:
+            self.log_message('error', "Session not initialized")
             raise ValueError("Session not initialized. Call init_session() first.")
-        # Utilisez self.session pour obtenir les informations des comptes
-        # Exemple (à adapter selon l'API de creditagricole_particuliers) :
-        # return self.session.get_accounts()
-
-    def get_transactions(self, account_id):
-        if not self.session:
-            raise ValueError("Session not initialized. Call init_session() first.")
-        # Utilisez self.session pour obtenir les transactions
-        # Exemple (à adapter selon l'API de creditagricole_particuliers) :
-        # return self.session.get_transactions(account_id)
-
-    def extract_csrf_token(self, html_content):
-        # Try different patterns to extract CSRF token
-        patterns = [
-            r'name="csrf_token".*?value="([^"]+)"',
-            r'data-csrf-token="([^"]+)"',
-            r'csrf-token\s*:\s*["\']([^"\']+)["\']',
-            r'<input[^>]*name="_csrf_token"[^>]*value="([^"]*)"',
-            r'<meta name="csrf-token" content="([^"]*)"'
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, html_content, re.DOTALL | re.IGNORECASE)
-            if match:
-                return match.group(1)
-        return None
-
-    def encode_password(self):
-        # This method needs to be adapted based on how the bank's virtual keypad works
-        return ','.join(str(ord(char)) for char in self.password)
-
-    def handle_additional_auth(self, response):
-        # Implement SécuriPass or SMS authentication here
-        # This will depend on the specific implementation of the bank
-        self.logger.warning("Additional authentication not implemented")
-        return False
-
-    def get_accounts(self):
-        # Implement method to fetch account information
-        pass
-
-    def get_transactions(self, account_id):
-        # Implement method to fetch transactions for a specific account
-        pass
-
-    def logout(self):
-        logout_url = urljoin(self.base_url, "particulier/deconnexion.html")
-        self.session.get(logout_url, headers=self.headers)
-        self.logger.info("Logged out successfully")
-
-    def check_connection(self):
         try:
-            response = self.session.get(self.base_url, headers=self.headers)
-            return response.status_code == 200
-        except requests.RequestException:
-            return False
+            accounts = self.session.get_accounts()
+            self.log_message('info', f"Retrieved {len(accounts)} accounts")
+            return accounts
+        except Exception as e:
+            self.log_message('error', f"Failed to retrieve accounts: {str(e)}")
+            raise
 
+    def get_transactions(self, account_id):
+        if not self.session:
+            self.log_message('error', "Session not initialized")
+            raise ValueError("Session not initialized. Call init_session() first.")
+        try:
+            transactions = self.session.get_transactions(account_id)
+            self.log_message('info', f"Retrieved {len(transactions)} transactions for account {account_id}")
+            return transactions
+        except Exception as e:
+            self.log_message('error', f"Failed to retrieve transactions for account {account_id}: {str(e)}")
+            raise
+
+    def close_session(self):
+        if self.session:
+            try:
+                self.session.close()
+                self.log_message('info', "Session closed successfully")
+            except Exception as e:
+                self.log_message('error', f"Failed to close session: {str(e)}")
+        else:
+            self.log_message('warning', "No active session to close")
 class CreditAgricoleRegion:
 
     def __init__(self, ca_region):
