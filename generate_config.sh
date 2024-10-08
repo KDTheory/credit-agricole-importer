@@ -27,13 +27,12 @@ update_section "GlobalSettings" "dry_run" "${DRY_RUN:-false}"
 
 # FireflyIII
 update_section "FireflyIII" "url" "${FIREFLY_III_URL}"
-update_section "FireflyIII" "access_token" "${FIREFLY_III_ACCESS_TOKEN}"
+update_section "FireflyIII" "personal_access_token" "${FIREFLY_PERSONAL_ACCESS_TOKEN}"
 
 # CreditAgricole
 update_section "CreditAgricole" "username" "${CREDIT_AGRICOLE_USERNAME}"
 update_section "CreditAgricole" "password" "${CREDIT_AGRICOLE_PASSWORD}"
 DEPARTMENT="${CREDIT_AGRICOLE_DEPARTMENT:-31}"
-echo "Debug: Department value to be set: $DEPARTMENT"
 update_section "CreditAgricole" "department" "${DEPARTMENT}"
 
 # AutoRenameTransaction
