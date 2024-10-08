@@ -8,6 +8,7 @@ from constant import *
 from creditagricole import CreditAgricoleClient
 from firefly3 import Firefly3Client, Firefly3Importer
 from firefly_iii_client.api import accounts_api, transactions_api
+from firefly_iii_client.configuration import Configuration
 from firefly_iii_client import AccountStore, AccountUpdate, TransactionStore, TransactionSplitStore
 from collections import defaultdict
 from logger import Logger
