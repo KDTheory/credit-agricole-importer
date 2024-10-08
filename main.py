@@ -23,6 +23,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Firefly III API client configuration
+configuration = firefly_iii_client.Configuration(
+    host=config.get('FireflyIII', 'url')
+)
+configuration.access_token = config.get('FireflyIII', 'personal_access_token')
+
 def get_or_create_account(accounts_api, name, type, iban=None):
     try:
         # Try to find the account by name
@@ -33,7 +39,7 @@ def get_or_create_account(accounts_api, name, type, iban=None):
                 return account.id
         
         # If not found, create a new account
-        new_account = AccountStore(
+        new_account = account_store.AccountStore(
             name=name,
             type=type,
             iban=iban
@@ -47,7 +53,7 @@ def get_or_create_account(accounts_api, name, type, iban=None):
 
 def update_account_balance(accounts_api, account_id, balance):
     try:
-        update = AccountUpdate(current_balance=balance)
+        update = account_update.AccountUpdate(current_balance=balance)
         accounts_api.update_account(account_id, update)
         logger.info(f"Updated balance for account {account_id}")
     except firefly_iii_client.ApiException as e:
@@ -60,34 +66,28 @@ def main():
         ca_cli.validate()
         ca_cli.init_session()
 
-        # Initialize Firefly III client
-        configuration = firefly_iii_client.Configuration(
-            host = config.get('FireflyIII', 'url')
-        )
-        configuration.access_token = config.get('FireflyIII', 'personal_access_token')
-
         with firefly_iii_client.ApiClient(configuration) as api_client:
-            accounts_api = AccountsApi(api_client)
-            transactions_api = TransactionsApi(api_client)
+            accounts_api_instance = accounts_api.AccountsApi(api_client)
+            transactions_api_instance = transactions_api.TransactionsApi(api_client)
 
             # Get accounts from Crédit Agricole
             ca_accounts = ca_cli.get_accounts()
 
             for ca_account in ca_accounts:
                 # Get or create account in Firefly III
-                ff_account_id = get_or_create_account(accounts_api, ca_account.label, "asset", ca_account.iban)
+                ff_account_id = get_or_create_account(accounts_api_instance, ca_account.label, "asset", ca_account.iban)
                 if ff_account_id is None:
                     continue
 
                 # Update account balance
-                update_account_balance(accounts_api, ff_account_id, str(ca_account.balance))
+                update_account_balance(accounts_api_instance, ff_account_id, str(ca_account.balance))
 
                 # Get transactions for the account
                 transactions = ca_cli.get_transactions(ca_account.id)
 
                 for transaction in transactions:
                     # Create a new transaction in Firefly III
-                    transaction_split = TransactionSplitStore(
+                    transaction_split = transaction_split_store.TransactionSplitStore(
                         amount=str(abs(transaction.amount)),
                         date=transaction.date.strftime("%Y-%m-%d"),
                         description=transaction.label,
@@ -96,12 +96,12 @@ def main():
                         type="withdrawal" if transaction.amount < 0 else "deposit"
                     )
 
-                    transaction_store = TransactionStore(
+                    transaction_store_obj = transaction_store.TransactionStore(
                         transactions=[transaction_split]
                     )
 
                     try:
-                        api_response = transactions_api.store_transaction(transaction_store)
+                        api_response = transactions_api_instance.store_transaction(transaction_store_obj)
                         logger.info(f"Transaction created successfully: {api_response}")
                     except firefly_iii_client.ApiException as e:
                         logger.error(f"Exception when creating transaction: {e}")
@@ -115,4 +115,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
