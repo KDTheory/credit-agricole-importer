@@ -26,7 +26,15 @@ logger = logging.getLogger(__name__)
 
 # Firefly III API client configuration
 configuration = firefly_iii_client.Configuration(
-    host=config.get('FireflyIII', 'url')
+    host=config.get('FireflyIII', 'url'),
+    username=config.get('FireflyIII', 'username', fallback=None),
+    password=config.get('FireflyIII', 'password', fallback=None),
+    api_key={'Authorization': f"Bearer {config.get('FireflyIII', 'personal_access_token')}"},
+    access_token=config.get('FireflyIII', 'personal_access_token'),
+    # Ajoutez ces champs qui semblent être requis selon l'erreur
+    editable=True,  # ou False, selon vos besoins
+    title="Firefly III Configuration",  # Donnez un titre approprié
+    value="Some value"  # Remplacez par une valeur appropriée
 )
 configuration.access_token = config.get('FireflyIII', 'personal_access_token')
 
