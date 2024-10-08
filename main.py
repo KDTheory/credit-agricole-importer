@@ -26,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Firefly III API client configuration
-configuration = configuration.Configuration(
+configuration = Configuration(
     host=config.get('FireflyIII', 'url')
 )
 configuration.access_token = config.get('FireflyIII', 'personal_access_token')
