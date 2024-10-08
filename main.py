@@ -3,6 +3,7 @@ import os
 import time
 import firefly_iii_client
 import tool
+import logging
 from constant import *
 from creditagricole import CreditAgricoleClient
 from firefly3 import Firefly3Client, Firefly3Importer
