@@ -1,5 +1,6 @@
 import configparser
 import os
+import sys
 import time
 import firefly_iii_client
 import tool
