@@ -82,21 +82,18 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
         try:
             logger.info("Démarrage de l'importation des données du Crédit Agricole")
             
-            # Initialisation du client Crédit Agricole
             ca_cli = CreditAgricoleClient(config)
             logger.info("Client Crédit Agricole initialisé")
-          
-            logger.info("Initialisation de la session Crédit Agricole")
+            
             ca_cli.init_session()
-          
-            # Récupération des comptes
-            logger.info("Récupération des comptes")
+            logger.info("Session Crédit Agricole initialisée")
+            
             accounts = ca_cli.get_accounts()
             logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
             
-            # Récupération des transactions
-            transactions = ca_cli.get_transactions(accounts)
-            logger.info(f"Nombre total de transactions récupérées : {len(transactions)}")
+            # Récupérer les transactions des 30 derniers jours
+            transactions = ca_cli.get_transactions()
+            logger.info(f"Nombre de transactions récupérées : {len(transactions)}")
             
             # Importation dans Firefly III
             firefly_cli = FireflyIIIClient(config)
