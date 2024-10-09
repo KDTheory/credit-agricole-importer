@@ -14,6 +14,12 @@ from firefly_iii_client import AccountStore, AccountUpdate, TransactionStore, Tr
 from collections import defaultdict
 from logger import Logger
 
+# Random log to make sure this script is running
+print("Python version:", sys.version)
+print("Starting main.py")
+sys.stdout.flush()
+sys.stderr.flush()
+
 # Read configuration
 config = configparser.ConfigParser()
 config.read('config.ini')
