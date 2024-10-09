@@ -19,11 +19,9 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # Configure logging
-logging.basicConfig(
-    level=config.get('Logging', 'level', fallback='INFO'),
-    filename=config.get('Logging', 'file', fallback=None),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    filename='/app/importer.log')
 logger = logging.getLogger(__name__)
 
 # Firefly III API client configuration
@@ -66,50 +64,29 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
     
     def main():
         try:
-            # Initialize Crédit Agricole client
-            ca_cli = CreditAgricoleClient(config, logger)
-            ca_cli.validate()
-            ca_cli.init_session()
-    
-            with firefly_iii_client.ApiClient(configuration) as api_client:
-                accounts_api_instance = accounts_api.AccountsApi(api_client)
-                transactions_api_instance = transactions_api.TransactionsApi(api_client)
-    
-                # Get accounts from Crédit Agricole
-                ca_accounts = ca_cli.get_accounts()
-    
-                for ca_account in ca_accounts:
-                    # Get or create account in Firefly III
-                    ff_account_id = get_or_create_account(accounts_api_instance, ca_account.label, "asset", ca_account.iban)
-                    if ff_account_id is None:
-                        continue
-    
-                    # Update account balance
-                    update_account_balance(accounts_api_instance, ff_account_id, str(ca_account.balance))
-    
-                    # Get transactions for the account
-                    transactions = ca_cli.get_transactions(ca_account.id)
-    
-                    for transaction in transactions:
-                        # Create a new transaction in Firefly III
-                        transaction_split = transaction_split_store.TransactionSplitStore(
-                            amount=str(abs(transaction.amount)),
-                            date=transaction.date.strftime("%Y-%m-%d"),
-                            description=transaction.label,
-                            source_id=ff_account_id if transaction.amount < 0 else None,
-                            destination_id=ff_account_id if transaction.amount > 0 else None,
-                            type="withdrawal" if transaction.amount < 0 else "deposit"
-                        )
-    
-                        transaction_store_obj = transaction_store.TransactionStore(
-                            transactions=[transaction_split]
-                        )
-    
-                        try:
-                            api_response = transactions_api_instance.store_transaction(transaction_store_obj)
-                            logger.info(f"Transaction created successfully: {api_response}")
-                        except firefly_iii_client.ApiException as e:
-                            logger.error(f"Exception when creating transaction: {e}")
+            logger.info("Démarrage de l'importation des données du Crédit Agricole")
+            
+            # Initialisation du client Crédit Agricole
+            ca_cli = CreditAgricoleClient(config)
+            logger.info("Client Crédit Agricole initialisé")
+            
+            # Récupération des comptes
+            accounts = ca_cli.get_accounts()
+            logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
+            
+            # Récupération des transactions
+            transactions = ca_cli.get_transactions(accounts)
+            logger.info(f"Nombre total de transactions récupérées : {len(transactions)}")
+            
+            # Importation dans Firefly III
+            firefly_cli = FireflyIIIClient(config)
+            imported_count = firefly_cli.import_transactions(transactions)
+            logger.info(f"Nombre de transactions importées dans Firefly III : {imported_count}")
+            
+            logger.info("Importation terminée avec succès")
+        except Exception as e:
+            logger.exception("Une erreur s'est produite lors de l'importation")
+            sys.exit(1)
     
             # Close Crédit Agricole session
             ca_cli.close_session()
