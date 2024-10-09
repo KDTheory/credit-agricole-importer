@@ -15,5 +15,5 @@ RUN /app/generate_config.sh
 RUN chmod +x /app/*.py
 
 ENTRYPOINT ["/app/generate_config.sh"]
-CMD ["/entrypoint.sh"]
+CMD ["/app/entrypoint.sh"]
 # CMD ["python", "main.py"]
