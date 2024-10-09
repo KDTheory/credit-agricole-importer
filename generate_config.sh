@@ -62,7 +62,7 @@ update_section "Logging" "file" "${LOGGING_FILE:-/app/importer.log}"
 # Accounts
 update_section "Accounts" "mapping" "${ACCOUNTS_MAPPING}"
 
-echo "Contenu du fichier de configuration :"
-cat "$CONFIG_FILE"
+# echo "Contenu du fichier de configuration :"
+# cat "$CONFIG_FILE"
 
 exec "$@"
