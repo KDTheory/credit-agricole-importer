@@ -60,24 +60,24 @@ class CreditAgricoleClient:
         self.log_message('info', "Credentials validated")
 
     def init_session(self):
-    try:
-        username = self.config.get('CreditAgricole', 'username')
-        password = self.config.get('CreditAgricole', 'password')
-        department = self.config.get('CreditAgricole', 'department')
-        
-        self.logger.info(f"Initializing session with username: {username}, department: {department}")
-
-        password_list = [int(char) for char in password]
-        
-        self.session = Authenticator(
-            username=username,
-            password=password_list,
-            region=department
-        )
-        self.logger.info("Session Crédit Agricole initialisée avec succès")
-    except Exception as e:
-        self.logger.error(f"Erreur lors de l'initialisation de la session : {str(e)}")
-        raise
+        try:
+            username = self.config.get('CreditAgricole', 'username')
+            password = self.config.get('CreditAgricole', 'password')
+            department = self.config.get('CreditAgricole', 'department')
+            
+            self.logger.info(f"Initializing session with username: {username}, department: {department}")
+    
+            password_list = [int(char) for char in password]
+            
+            self.session = Authenticator(
+                username=username,
+                password=password_list,
+                region=department
+            )
+            self.logger.info("Session Crédit Agricole initialisée avec succès")
+        except Exception as e:
+            self.logger.error(f"Erreur lors de l'initialisation de la session : {str(e)}")
+            raise
 
     def get_accounts(self):
         self.logger.info("Récupération des comptes")
@@ -92,20 +92,27 @@ class CreditAgricoleClient:
             self.logger.error(f"Erreur lors de la récupération des comptes : {str(e)}")
             raise
 
-    def get_transactions(self, account_id):
+    def get_transactions(self, account_id, date_start=None, date_stop=None):
         self.logger.info("Récupération des transactions")
         if not self.session:
-            self.log_message('error', "Session not initialized")
+            self.logger.error("Session not initialized")
             raise ValueError("Session not initialized. Call init_session() first.")
+        
+        if date_start is None:
+            date_start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        if date_stop is None:
+            date_stop = datetime.now().strftime("%Y-%m-%d")
+        
         try:
-            transactions = self.session.get_transactions(account_id)
-            self.log_message('info', f"Retrieved {len(transactions)} transactions for account {account_id}")
-            return transactions
+            operations = Operations(
+                session=self.session,
+                date_start=date_start,
+                date_stop=date_stop
+            )
+            return operations.list
         except Exception as e:
-            self.log_message('error', f"Failed to retrieve transactions for account {account_id}: {str(e)}")
+            self.logger.error(f"Erreur lors de la récupération des transactions : {str(e)}")
             raise
-        self.logger.info(f"Nombre total de transactions récupérées : {len(all_transactions)}")
-        return all_transactions
 
     def close_session(self):
         if self.session:
