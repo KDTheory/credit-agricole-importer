@@ -72,7 +72,7 @@ class CreditAgricoleClient:
             self.session = Authenticator(
                 username=username,
                 password=password_list,
-                region=department
+                department=department
             )
             self.logger.info("Session Crédit Agricole initialisée avec succès")
         except Exception as e:
