@@ -24,9 +24,9 @@ class CreditAgricoleAuthenticator(Authenticator):
 
 
 class CreditAgricoleClient:
-    def __init__(self, config, logger):
+    def __init__(self, config):
         self.config = config
-        self.logger = logger
+        self.logger = logging.getLogger(__name__)
         self.department = config.get('CreditAgricole', 'department')
         self.username = config.get('CreditAgricole', 'username')
         self.password = self.parse_password(config.get('CreditAgricole', 'password'))
@@ -60,6 +60,7 @@ class CreditAgricoleClient:
         self.log_message('info', "Credentials validated")
 
     def init_session(self):
+        self.logger.info("Initialisation de la session Crédit Agricole")
         try:
             self.log_message('info', f"Initializing session with username: {self.username}, department: {self.department}")
             self.session = Authenticator(
@@ -73,18 +74,21 @@ class CreditAgricoleClient:
             raise
 
     def get_accounts(self):
+        self.logger.info("Récupération des comptes")
         if not self.session:
             self.log_message('error', "Session not initialized")
             raise ValueError("Session not initialized. Call init_session() first.")
         try:
             accounts = self.session.get_accounts()
             self.log_message('info', f"Retrieved {len(accounts)} accounts")
+            self.logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
             return accounts
         except Exception as e:
             self.log_message('error', f"Failed to retrieve accounts: {str(e)}")
             raise
 
     def get_transactions(self, account_id):
+        self.logger.info("Récupération des transactions")
         if not self.session:
             self.log_message('error', "Session not initialized")
             raise ValueError("Session not initialized. Call init_session() first.")
@@ -95,6 +99,8 @@ class CreditAgricoleClient:
         except Exception as e:
             self.log_message('error', f"Failed to retrieve transactions for account {account_id}: {str(e)}")
             raise
+        self.logger.info(f"Nombre total de transactions récupérées : {len(all_transactions)}")
+        return all_transactions
 
     def close_session(self):
         if self.session:
@@ -105,6 +111,7 @@ class CreditAgricoleClient:
                 self.log_message('error', f"Failed to close session: {str(e)}")
         else:
             self.log_message('warning', "No active session to close")
+            
 class CreditAgricoleRegion:
 
     def __init__(self, ca_region):
