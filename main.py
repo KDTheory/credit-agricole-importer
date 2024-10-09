@@ -92,11 +92,16 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
             logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
             
             for account in accounts:
-                logger.info(f"Compte: {account}")
+                account_info = f"Compte: {account.get_product_name()} - Solde: {account.get_balance()}"
+                logger.info(account_info)
                 
                 # Récupérer les transactions pour chaque compte
-                transactions = account.get_operations(count=300)  # Récupère les 300 dernières opérations
-                logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
+              try:
+                  transactions = account.get_operations(count=300)  # Récupère les 300 dernières opérations
+                  logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
+                
+                  for transaction in transactions:
+                    logger.info(f"Transaction: Date={transaction.get_date()}, Montant={transaction.get_amount()}, Libellé={transaction.get_label()}")
                 
                 # Importation dans Firefly III
                 firefly_cli = FireflyIIIClient(config)
