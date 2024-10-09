@@ -87,13 +87,22 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
         except Exception as e:
             logger.exception("Une erreur s'est produite lors de l'importation")
             sys.exit(1)
-    
+        verify_import(firefly_cli, imported_count)
+      
             # Close Crédit Agricole session
             ca_cli.close_session()
     
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")
             sys.exit(1)
-    
+
+    def verify_import(firefly_cli, imported_count):
+        logger.info("Vérification de l'importation")
+        firefly_transactions_count = firefly_cli.get_transactions_count()
+        if firefly_transactions_count >= imported_count:
+            logger.info(f"Vérification réussie : {firefly_transactions_count} transactions trouvées dans Firefly III")
+        else:
+            logger.warning(f"Vérification échouée : seulement {firefly_transactions_count} transactions trouvées dans Firefly III au lieu de {imported_count}")
+  
     if __name__ == "__main__":
         main()
