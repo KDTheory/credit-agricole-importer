@@ -12,6 +12,7 @@ RUN chmod +x app/entrypoint.sh
 COPY generate_config.sh /app/generate_config.sh
 RUN chmod +x /app/generate_config.sh
 RUN /app/generate_config.sh
+RUN chmod +x /app/*.py
 
 ENTRYPOINT ["/app/generate_config.sh"]
 CMD ["/entrypoint.sh"]
