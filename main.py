@@ -85,8 +85,12 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
             # Initialisation du client Crédit Agricole
             ca_cli = CreditAgricoleClient(config)
             logger.info("Client Crédit Agricole initialisé")
-            
+          
+            logger.info("Initialisation de la session Crédit Agricole")
+            ca_cli.init_session()
+          
             # Récupération des comptes
+            logger.info("Récupération des comptes")
             accounts = ca_cli.get_accounts()
             logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
             
