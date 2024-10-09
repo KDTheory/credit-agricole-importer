@@ -82,15 +82,14 @@ class CreditAgricoleClient:
     def get_accounts(self):
         self.logger.info("Récupération des comptes")
         if not self.session:
-            self.log_message('error', "Session not initialized")
+            self.logger.error("Session not initialized")
             raise ValueError("Session not initialized. Call init_session() first.")
+        
         try:
-            accounts = self.session.get_accounts()
-            self.log_message('info', f"Retrieved {len(accounts)} accounts")
-            self.logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
-            return accounts
+            accounts = Accounts(session=self.session)
+            return accounts.list
         except Exception as e:
-            self.log_message('error', f"Failed to retrieve accounts: {str(e)}")
+            self.logger.error(f"Erreur lors de la récupération des comptes : {str(e)}")
             raise
 
     def get_transactions(self, account_id):
