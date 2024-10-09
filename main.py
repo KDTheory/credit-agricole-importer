@@ -91,23 +91,23 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
             accounts = ca_cli.get_accounts()
             logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
             
-        for account in accounts:
-            logger.info(f"Compte: {account}")
-            
-            # Récupérer les transactions pour chaque compte
-            transactions = account.get_operations(count=300)  # Récupère les 300 dernières opérations
-            logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
-            
-            # Importation dans Firefly III
-            firefly_cli = FireflyIIIClient(config)
-            imported_count = firefly_cli.import_transactions(transactions)
-            logger.info(f"Nombre de transactions importées dans Firefly III : {imported_count}")
-            
-            logger.info("Importation terminée avec succès")
-        except Exception as e:
-            logger.exception("Une erreur s'est produite lors de l'importation")
-            sys.exit(1)
-            verify_import(firefly_cli, imported_count)
+            for account in accounts:
+                logger.info(f"Compte: {account}")
+                
+                # Récupérer les transactions pour chaque compte
+                transactions = account.get_operations(count=300)  # Récupère les 300 dernières opérations
+                logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
+                
+                # Importation dans Firefly III
+                firefly_cli = FireflyIIIClient(config)
+                imported_count = firefly_cli.import_transactions(transactions)
+                logger.info(f"Nombre de transactions importées dans Firefly III : {imported_count}")
+                
+                logger.info("Importation terminée avec succès")
+            except Exception as e:
+                logger.exception("Une erreur s'est produite lors de l'importation")
+                sys.exit(1)
+                verify_import(firefly_cli, imported_count)
       
             # Close Crédit Agricole session
             ca_cli.close_session()
