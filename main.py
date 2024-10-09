@@ -25,10 +25,17 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # Configure logging
+log_file = '/app/importer.log'
+print(f"Attempting to log to: {log_file}")
+print(f"Log file exists: {os.path.exists(log_file)}")
+print(f"Log file is writable: {os.access(log_file, os.W_OK)}")
+
 logging.basicConfig(level=logging.DEBUG, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    filename='/app/importer.log')
+                    filename=log_file,
+                    filemode='a')
 logger = logging.getLogger(__name__)
+logger.info("Logging initialized in main.py")
 
 # Firefly III API client configuration
 configuration = Configuration(
