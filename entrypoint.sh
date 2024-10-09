@@ -1,15 +1,20 @@
 #!/bin/bash
 
-# Fonction pour exécuter le script Python
+echo "Starting entrypoint script"
+
 run_script() {
+    echo "Running main.py"
     python /app/main.py
+    echo "main.py execution completed"
 }
 
-# Exécuter le script au démarrage
+echo "Running initial script"
 run_script
 
-# Boucle pour exécuter le script toutes les heures
+echo "Entering main loop"
 while true; do
-    sleep 3600  # Attendre 1 heure (3600 secondes)
+    echo "Waiting for next execution"
+    sleep 3600
+    echo "Running scheduled script"
     run_script
 done
