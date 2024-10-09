@@ -7,10 +7,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y cron
 
 COPY . .
+COPY ./entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 COPY ./generate_config.sh /app/generate_config.sh
 RUN chmod +x /app/generate_config.sh
-
-RUN echo "0 * * * * /app/cron_script.sh >> /var/log/cron.log 2>&1" | crontab -
+RUN /app/generate_config.sh
 
 ENTRYPOINT ["/app/generate_config.sh"]
-CMD ["python", "main.py"]
+CMD ["/entrypoint.sh"]
+# CMD ["python", "main.py"]
