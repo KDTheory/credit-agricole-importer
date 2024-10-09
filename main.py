@@ -8,7 +8,6 @@ import sys
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
 from firefly_iii_client.api import accounts_api, transactions_api
-from firefly_iii_client.model.transaction_split_store import TransactionSplitStore
 
 # Constants
 CONFIG_FILE = '/app/config.ini'
