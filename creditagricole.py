@@ -65,7 +65,7 @@ class CreditAgricoleClient:
             password = self.config.get('CreditAgricole', 'password')
             department = self.config.get('CreditAgricole', 'department')
             
-            self.logger.info(f"Initializing session with username: {username}, department: {department}")
+            self.logger.info(f"Initializing session ")
     
             password_list = [int(char) for char in password]
             
@@ -86,8 +86,9 @@ class CreditAgricoleClient:
             raise ValueError("Session not initialized. Call init_session() first.")
         
         try:
+            self.logger.info("Récupération des comptes")
             accounts = Accounts(session=self.session)
-            return accounts.list
+            return list(accounts)  # Convertit l'itérable en liste
         except Exception as e:
             self.logger.error(f"Erreur lors de la récupération des comptes : {str(e)}")
             raise
