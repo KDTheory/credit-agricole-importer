@@ -30,10 +30,13 @@ print(f"Attempting to log to: {log_file}")
 print(f"Log file exists: {os.path.exists(log_file)}")
 print(f"Log file is writable: {os.access(log_file, os.W_OK)}")
 
-logging.basicConfig(level=logging.DEBUG, 
+logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    filename=log_file,
-                    filemode='a')
+                    handlers=[
+                        logging.FileHandler(log_file),
+                        logging.StreamHandler(sys.stdout)
+                    ])
+
 logger = logging.getLogger(__name__)
 logger.info("Logging initialized in main.py")
 
