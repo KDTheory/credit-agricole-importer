@@ -7,7 +7,7 @@ import tool
 import logging
 from constant import *
 from creditagricole import CreditAgricoleClient
-from firefly3 import Firefly3Client, Firefly3Importer
+from firefly_iii_client import FireflyIIIClient
 from firefly_iii_client.api import accounts_api, transactions_api
 from firefly_iii_client.configuration import Configuration
 from firefly_iii_client import AccountStore, AccountUpdate, TransactionStore, TransactionSplitStore
@@ -82,44 +82,46 @@ with firefly_iii_client.ApiClient(configuration) as api_client:
         try:
             logger.info("Démarrage de l'importation des données du Crédit Agricole")
             
+            # Initialisation du client Crédit Agricole
             ca_cli = CreditAgricoleClient(config)
             logger.info("Client Crédit Agricole initialisé")
             
+            # Initialisation de la session
             ca_cli.init_session()
             logger.info("Session Crédit Agricole initialisée")
             
+            # Récupération des comptes
             accounts = ca_cli.get_accounts()
             logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
             
+            # Initialisation du client Firefly III
+            firefly_cli = FireflyIIIClient(config)
+            
             for account in accounts:
-                account_info = f"Compte: {account.get_product_name()} - Solde: {account.get_balance()}"
-                logger.info(account_info)
-                
-                # Récupérer les transactions pour chaque compte
                 try:
-                  transactions = account.get_operations(count=300)  # Récupère les 300 dernières opérations
-                  logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
-              
-                  for transaction in transactions:
-                      logger.info(f"Transaction: Date={transaction.get_date()}, Montant={transaction.get_amount()}, Libellé={transaction.get_label()}")
-                
-                # Importation dans Firefly III
-                firefly_cli = FireflyIIIClient(config)
-                imported_count = firefly_cli.import_transactions(transactions)
-                logger.info(f"Nombre de transactions importées dans Firefly III : {imported_count}")
-                
-                logger.info("Importation terminée avec succès")
-              
+                    account_info = f"Compte: {account.get_product_name()} - Solde: {account.get_balance()}"
+                    logger.info(account_info)
+                    
+                    # Récupération des transactions pour chaque compte
+                    transactions = account.get_operations(count=300)  # Récupère les 300 dernières opérations
+                    logger.info(f"Nombre de transactions récupérées pour le compte {account.get_product_name()}: {len(transactions)}")
+                    
+                    # Traitement des transactions
+                    for transaction in transactions:
+                        transaction_info = f"Transaction: Date={transaction.get_date()}, Montant={transaction.get_amount()}, Libellé={transaction.get_label()}"
+                        logger.info(transaction_info)
+                    
+                    # Importation des transactions dans Firefly III
+                    imported_count = firefly_cli.import_transactions(transactions)
+                    logger.info(f"Nombre de transactions importées dans Firefly III pour le compte {account.get_product_name()} : {imported_count}")
+                    
+                except Exception as e:
+                    logger.error(f"Erreur lors du traitement du compte {account.get_product_name()}: {str(e)}")
+            
+            logger.info("Importation terminée avec succès")
+        
         except Exception as e:
             logger.exception("Une erreur s'est produite lors de l'importation")
-            sys.exit(1)
-            verify_import(firefly_cli, imported_count)
-      
-            # Close Crédit Agricole session
-            ca_cli.close_session()
-    
-        except Exception as e:
-            logger.error(f"An error occurred: {str(e)}")
             sys.exit(1)
 
     def verify_import(firefly_cli, imported_count):
