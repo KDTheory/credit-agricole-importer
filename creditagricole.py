@@ -60,18 +60,24 @@ class CreditAgricoleClient:
         self.log_message('info', "Credentials validated")
 
     def init_session(self):
-        self.logger.info("Initialisation de la session Crédit Agricole")
-        try:
-            self.log_message('info', f"Initializing session with username: {self.username}, department: {self.department}")
-            self.session = Authenticator(
-                username=self.username,
-                password=self.password,
-                department=int(self.department)
-            )
-            self.log_message('info', "Session initialized successfully")
-        except Exception as e:
-            self.log_message('error', f"Failed to initialize session: {str(e)}")
-            raise
+    try:
+        username = self.config.get('CreditAgricole', 'username')
+        password = self.config.get('CreditAgricole', 'password')
+        department = self.config.get('CreditAgricole', 'department')
+        
+        self.logger.info(f"Initializing session with username: {username}, department: {department}")
+
+        password_list = [int(char) for char in password]
+        
+        self.session = Authenticator(
+            username=username,
+            password=password_list,
+            region=department
+        )
+        self.logger.info("Session Crédit Agricole initialisée avec succès")
+    except Exception as e:
+        self.logger.error(f"Erreur lors de l'initialisation de la session : {str(e)}")
+        raise
 
     def get_accounts(self):
         self.logger.info("Récupération des comptes")
