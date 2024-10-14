@@ -55,11 +55,14 @@ def main():
         
         # Initialisation du client Crédit Agricole
         ca_config = config['CreditAgricole']
-        ca_cli = CreditAgricoleClient(
-            username=ca_config['username'],
-            password=ca_config['password'],
-            department=ca_config['department']
-        )
+        ca_cli = CreditAgricoleClient(config, logger)
+        ca_cli.department = ca_config['department']
+        ca_cli.account_id = ca_config['username']
+        ca_cli.password = ca_config['password']
+        ca_cli.enabled_accounts = ca_config.get('import_account_id_list', '')
+        ca_cli.get_transactions_period = ca_config.get('get_transactions_period_days', '30')
+        ca_cli.max_transactions = ca_config.get('max_transactions_per_get', '300')
+        ca_cli.validate()
         logger.info("Client Crédit Agricole initialisé")
         
         # Initialisation de la session
