@@ -30,20 +30,18 @@ def load_config():
 def init_firefly_client(config):
     try:
         configuration = firefly_iii_client.Configuration(
-            host=config['FireflyIII'].get('url')
+            host=config['FireflyIII'].get('url'),
+            api_key={'Authorization': f"Bearer {config['FireflyIII'].get('personal_access_token')}"},
+            title="firefly.api_version",  # Utilisez une des valeurs autorisées pour le titre
+            editable=False,
+            value={}
         )
-        # Set the access token directly
-        configuration.access_token = config['FireflyIII'].get('personal_access_token')
 
-        configuration.editable = True
-        configuration.title = "Firefly III Client"
-        configuration.value = "CA"
-
-        # Use a context manager to create the API client
+        # Utilisez un context manager pour créer le client API
         with firefly_iii_client.ApiClient(configuration) as api_client:
             print("Configuration Firefly III :")
             print("Host:", configuration.host)
-            print("Access Token:", configuration.access_token)
+            print("Access Token:", configuration.api_key['Authorization'])
             return api_client
     except Exception as e:
         print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
@@ -94,8 +92,8 @@ def main():
         logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
         
         # Initialisation du client Firefly III
-        with init_firefly_client(config) as api_client:
-            transactions_api = firefly_iii_client.TransactionsApi(api_client)
+        api_client = init_firefly_client(config)
+        transactions_api = firefly_iii_client.TransactionsApi(api_client)
         
         for account in accounts:
             try:
