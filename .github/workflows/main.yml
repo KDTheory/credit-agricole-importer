@@ -1,8 +1,8 @@
 name: Check Upstream Updates and Build
 
 on:
-  schedule:
-    - cron: '0 * * * *'  # Vérifie chaque heure si l'upstream a changé
+  # schedule:
+  #   - cron: '0 * * * *'  # Vérifie chaque heure si l'upstream a changé
   push:
     branches: master
 
