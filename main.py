@@ -37,10 +37,7 @@ def init_firefly_client(config):
             host=firefly_url,
             api_key={
                 "Authorization": f"Bearer {firefly_token}"
-            },
-            editable=True,  # Valeur par défaut, à ajuster si nécessaire
-            title="Firefly III API Client",
-            value=firefly_token
+            }
         )
 
         # Affiche les informations de configuration pour vérifier qu'elles sont correctes
