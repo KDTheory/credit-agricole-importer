@@ -25,11 +25,7 @@ def init_firefly_client(config):
     firefly_section = config['FireflyIII']
     configuration = firefly_iii_client.Configuration(
         host=firefly_section['url'],
-        api_key={'Authorization': f"Bearer {firefly_section['personal_access_token']}"},
-        # Add these required fields
-        title="Firefly III Configuration",
-        editable=False,
-        value={}
+        access_token=firefly_section['personal_access_token']
     )
     return firefly_iii_client.ApiClient(configuration)
 
