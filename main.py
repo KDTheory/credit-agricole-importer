@@ -35,6 +35,10 @@ def init_firefly_client(config):
         # Set the access token directly
         configuration.access_token = config['FireflyIII'].get('personal_access_token')
 
+        configuration.editable = True
+        configuration.title = "Firefly III Client"
+        configuration.value = "CA"
+
         # Use a context manager to create the API client
         with firefly_iii_client.ApiClient(configuration) as api_client:
             print("Configuration Firefly III :")
