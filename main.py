@@ -25,8 +25,8 @@ def init_firefly_client(config):
     firefly_section = config['FireflyIII']
     configuration = firefly_iii_client.Configuration(
         host=firefly_section['url']
+        access_token=firefly_section['personal_access_token']
     )
-    configuration.access_token = firefly_section['personal_access_token']
     return firefly_iii_client.ApiClient(configuration)
 
 def import_transactions(transactions_api_instance, account, transactions):
