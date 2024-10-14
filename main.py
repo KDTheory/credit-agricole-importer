@@ -7,6 +7,7 @@ import os
 import sys
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
+from firefly_iii_client import Configuration
 from firefly_iii_client.api import accounts_api, transactions_api
 
 # Constants
