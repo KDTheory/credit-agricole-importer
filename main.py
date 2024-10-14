@@ -23,9 +23,10 @@ def load_config():
 
 def init_firefly_client(config):
     firefly_section = config['FireflyIII']
-    configuration = firefly_iii_client.Configuration()
-    configuration.host = firefly_section['url']
-    configuration.api_key['Authorization'] = f"Bearer {firefly_section['personal_access_token']}"
+    configuration = firefly_iii_client.Configuration(
+        host=firefly_section['url']
+    )
+    configuration.access_token = firefly_section['personal_access_token']
     return firefly_iii_client.ApiClient(configuration)
 
 def import_transactions(transactions_api_instance, account, transactions):
@@ -73,8 +74,8 @@ def main():
         logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
         
         # Initialisation du client Firefly III
-        with init_firefly_client(config) as api_client:
-            transactions_api_instance = transactions_api.TransactionsApi(api_client)
+        api_client = init_firefly_client(config)
+        transactions_api_instance = transactions_api.TransactionsApi(api_client)
         
             for account in accounts:
                 try:
@@ -86,8 +87,20 @@ def main():
                     logger.info(f"Nombre de transactions récupérées pour le compte {account.name}: {len(transactions)}")
                     
                     # Importation des transactions dans Firefly III
-                    imported_count = import_transactions(transactions_api_instance, account, transactions)
-                    logger.info(f"Nombre de transactions importées dans Firefly III pour le compte {account.name} : {imported_count}")
+                    for transaction in transactions:
+                        try:
+                            transaction_split = firefly_iii_client.TransactionSplitStore(
+                                type="withdrawal" if transaction.amount < 0 else "deposit",
+                                date=transaction.date.strftime("%Y-%m-%d"),
+                                amount=str(abs(transaction.amount)),
+                                description=transaction.label,
+                                source_name=account.name if transaction.amount < 0 else "External Account",
+                                destination_name="External Account" if transaction.amount < 0 else account.name
+                            )
+                            response = transactions_api_instance.store_transaction(transaction_split_store=transaction_split)
+                            logger.info(f"Transaction importée : {response}")
+                        except firefly_iii_client.ApiException as e:
+                            logger.error(f"Erreur lors de l'importation de la transaction: {e}")
                     
                 except Exception as e:
                     logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
