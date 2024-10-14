@@ -22,13 +22,23 @@ def load_config():
     return config
 
 def init_firefly_client(config):
-    firefly_section = config['FireflyIII']
-    logger.info(f"Initializing Firefly III client with URL: {firefly_section['url']}")
-    configuration = firefly_iii_client.Configuration(
-        host=firefly_section['url'],
-        api_key={'Authorization': f"Bearer {firefly_section['personal_access_token']}"}
-    )
-    return firefly_iii_client.ApiClient(configuration)
+    try:
+        configuration = Configuration(
+            host=config["firefly_url"],
+            api_key={
+                "Authorization": f"Bearer {config['firefly_token']}"
+            }
+        )
+
+        # Affiche les informations de configuration pour vérifier qu'elles sont correctes
+        print("Configuration Firefly III :")
+        print("Host:", configuration.host)
+        print("API Key:", configuration.api_key)
+
+        return configuration
+    except Exception as e:
+        print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
+        raise
 
 def import_transactions(transactions_api_instance, account, transactions):
     imported_count = 0
