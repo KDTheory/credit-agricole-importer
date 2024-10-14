@@ -29,10 +29,13 @@ def load_config():
 
 def init_firefly_client(config):
     try:
+        firefly_url = config['FireflyIII'].get('url')
+        firefly_token = config['FireflyIII'].get('personal_access_token')
+
         configuration = Configuration(
-            host=config["firefly_url"],
+            host=firefly_url,
             api_key={
-                "Authorization": f"Bearer {config['firefly_token']}"
+                "Authorization": f"Bearer {firefly_token}"
             }
         )
 
