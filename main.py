@@ -9,6 +9,7 @@ from creditagricole import CreditAgricoleClient
 import firefly_iii_client
 from firefly_iii_client import Configuration
 from firefly_iii_client.api import accounts_api, transactions_api
+import urllib3
 
 # Constants
 CONFIG_FILE = '/app/config.ini'
@@ -29,27 +30,26 @@ def load_config():
 
 def init_firefly_client(config):
     try:
+        firefly_section = config['FireflyIII']
         configuration = firefly_iii_client.Configuration(
-            host=config['FireflyIII'].get('url'),
-            api_key={'Authorization': f"Bearer {config['FireflyIII'].get('personal_access_token')}"},
-            title="firefly.api_version",  # Utilisez une des valeurs autorisées pour le titre
-            editable=False,
-            value={}
+            host=firefly_section.get('url'),
+            api_key={'Authorization': f"Bearer {firefly_section.get('personal_access_token')}"}
         )
 
-        # Désactiver la vérification SSL
-        configuration.verify_ssl = False
-        
+        # Créer le client API avec la configuration
+        api_client = firefly_iii_client.ApiClient(configuration)
+
+        # Désactiver la vérification SSL au niveau du client API
+        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
+
         # Supprimer les avertissements liés à l'insécurité SSL
-        import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-        # Utilisez un context manager pour créer le client API
-        with firefly_iii_client.ApiClient(configuration) as api_client:
-            print("Configuration Firefly III :")
-            print("Host:", configuration.host)
-            print("Access Token:", configuration.api_key['Authorization'])
-            return api_client
+        print("Configuration Firefly III :")
+        print("Host:", configuration.host)
+        print("SSL Verification: Disabled")
+        
+        return api_client
     except Exception as e:
         print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
         raise
