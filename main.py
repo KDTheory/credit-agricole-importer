@@ -37,6 +37,13 @@ def init_firefly_client(config):
             value={}
         )
 
+        # Désactiver la vérification SSL
+        configuration.verify_ssl = False
+        
+        # Supprimer les avertissements liés à l'insécurité SSL
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
         # Utilisez un context manager pour créer le client API
         with firefly_iii_client.ApiClient(configuration) as api_client:
             print("Configuration Firefly III :")
