@@ -8,7 +8,8 @@ import sys
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
 from firefly_iii_client import Configuration
-from firefly_iii_client.api import accounts_api, transactions_api
+from firefly_iii_client.model.configuration_filter import ConfigurationFilter
+from firefly_iii_client.api import accounts_api, transactions_api, default_api
 import urllib3
 
 # Constants
@@ -32,27 +33,38 @@ def init_firefly_client(config):
     try:
         firefly_section = config['FireflyIII']
         configuration = firefly_iii_client.Configuration(
-            host=firefly_section.get('url'),
-            api_key={'Authorization': f"Bearer {firefly_section.get('personal_access_token')}"},
-            editable=False,  # Ajout du champ editable
-            title="Firefly III Configuration",  # Ajout du champ title
-            value={}  # Ajout du champ value
+            host=firefly_section.get('url')
         )
+        configuration.access_token = firefly_section.get('personal_access_token')
+
+        # Désactiver la vérification SSL si nécessaire
+        configuration.verify_ssl = False
+
+        # Supprimer les avertissements liés à l'insécurité SSL
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
 
-        # Désactiver la vérification SSL au niveau du client API
-        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
+        # Initialiser l'API par défaut
+        api_instance = default_api.DefaultApi(api_client)
 
-        # Supprimer les avertissements liés à l'insécurité SSL
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        # Obtenir la configuration du système
+        config_filter = ConfigurationFilter(
+            title="firefly.api_version"
+        )
+        api_version = api_instance.get_configuration(config_filter)
 
         print("Configuration Firefly III :")
         print("Host:", configuration.host)
+        print("API Version:", api_version)
         print("SSL Verification: Disabled")
         
         return api_client
+    except firefly_iii_client.ApiException as e:
+        print(f"Exception lors de l'appel à l'API Firefly III: {e}")
+        raise
     except Exception as e:
         print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
         raise
