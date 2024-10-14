@@ -25,12 +25,9 @@ def init_firefly_client(config):
     firefly_section = config['FireflyIII']
     logger.info(f"Initializing Firefly III client with URL: {firefly_section['url']}")
     configuration = firefly_iii_client.Configuration(
-        host=firefly_section['url'],
-        api_key={'Authorization': f"Bearer {firefly_section['personal_access_token']}"},
-        title="Firefly III Configuration",
-        editable=False,
-        value={}
+        host=firefly_section['url']
     )
+    configuration.api_key['Authorization'] = f"Bearer {firefly_section['personal_access_token']}"
     return firefly_iii_client.ApiClient(configuration)
 
 def import_transactions(transactions_api_instance, account, transactions):
