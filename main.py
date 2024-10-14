@@ -76,7 +76,7 @@ def main():
         
         # Initialisation du client Firefly III
         api_client = init_firefly_client(config)
-        transactions_api_instance = transactions_api.TransactionsApi(api_client)
+        transactions_api = firefly_iii_client.TransactionsApi(api_client)
         
         for account in accounts:
             try:
