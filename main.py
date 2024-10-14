@@ -33,7 +33,10 @@ def init_firefly_client(config):
         firefly_section = config['FireflyIII']
         configuration = firefly_iii_client.Configuration(
             host=firefly_section.get('url'),
-            api_key={'Authorization': f"Bearer {firefly_section.get('personal_access_token')}"}
+            api_key={'Authorization': f"Bearer {firefly_section.get('personal_access_token')}"},
+            editable=False,  # Ajout du champ editable
+            title="Firefly III Configuration",  # Ajout du champ title
+            value={}  # Ajout du champ value
         )
 
         # Créer le client API avec la configuration
