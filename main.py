@@ -21,6 +21,11 @@ def load_config():
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
     return config
+    
+    return {
+        "firefly_url": config['FireflyIII'].get('url'), 
+        "firefly_token": config['FireflyIII'].get('personal_access_token'),
+    }
 
 def init_firefly_client(config):
     try:
