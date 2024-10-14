@@ -55,7 +55,7 @@ def main():
         
         # Initialisation du client Crédit Agricole
         ca_config = config['CreditAgricole']
-        ca_cli = CreditAgricoleClient(config, logger)
+        ca_cli = CreditAgricoleClient(config)
         ca_cli.department = ca_config['department']
         ca_cli.account_id = ca_config['username']
         ca_cli.password = ca_config['password']
