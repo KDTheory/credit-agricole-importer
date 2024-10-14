@@ -77,33 +77,33 @@ def main():
         api_client = init_firefly_client(config)
         transactions_api_instance = transactions_api.TransactionsApi(api_client)
         
-            for account in accounts:
-                try:
-                    account_info = f"Compte: {account.name} - Solde: {account.balance}"
-                    logger.info(account_info)
-                    
-                    # Récupération des transactions pour chaque compte
-                    transactions = ca_cli.get_transactions(account)
-                    logger.info(f"Nombre de transactions récupérées pour le compte {account.name}: {len(transactions)}")
-                    
-                    # Importation des transactions dans Firefly III
-                    for transaction in transactions:
-                        try:
-                            transaction_split = firefly_iii_client.TransactionSplitStore(
-                                type="withdrawal" if transaction.amount < 0 else "deposit",
-                                date=transaction.date.strftime("%Y-%m-%d"),
-                                amount=str(abs(transaction.amount)),
-                                description=transaction.label,
-                                source_name=account.name if transaction.amount < 0 else "External Account",
-                                destination_name="External Account" if transaction.amount < 0 else account.name
-                            )
-                            response = transactions_api_instance.store_transaction(transaction_split_store=transaction_split)
-                            logger.info(f"Transaction importée : {response}")
-                        except firefly_iii_client.ApiException as e:
-                            logger.error(f"Erreur lors de l'importation de la transaction: {e}")
-                    
-                except Exception as e:
-                    logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
+        for account in accounts:
+            try:
+                account_info = f"Compte: {account.name} - Solde: {account.balance}"
+                logger.info(account_info)
+                
+                # Récupération des transactions pour chaque compte
+                transactions = ca_cli.get_transactions(account)
+                logger.info(f"Nombre de transactions récupérées pour le compte {account.name}: {len(transactions)}")
+                
+                # Importation des transactions dans Firefly III
+                for transaction in transactions:
+                    try:
+                        transaction_split = firefly_iii_client.TransactionSplitStore(
+                            type="withdrawal" if transaction.amount < 0 else "deposit",
+                            date=transaction.date.strftime("%Y-%m-%d"),
+                            amount=str(abs(transaction.amount)),
+                            description=transaction.label,
+                            source_name=account.name if transaction.amount < 0 else "External Account",
+                            destination_name="External Account" if transaction.amount < 0 else account.name
+                        )
+                        response = transactions_api_instance.store_transaction(transaction_split_store=transaction_split)
+                        logger.info(f"Transaction importée : {response}")
+                    except firefly_iii_client.ApiException as e:
+                        logger.error(f"Erreur lors de l'importation de la transaction: {e}")
+                
+            except Exception as e:
+                logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
         
         logger.info("Importation terminée avec succès")
     
