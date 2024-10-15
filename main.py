@@ -41,28 +41,14 @@ def init_firefly_client(config):
             value={}
         )
         
-        # Créer un contexte SSL non vérifié
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
 
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
 
-        # Désactiver la vérification SSL au niveau du client API si nécessaire
-        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
-
-        # Initialiser l'API de configuration
-        api_instance = configuration_api.ConfigurationApi(api_client)
-
         print("Configuration Firefly III :")
         print("Host:", configuration.host)
-        print("SSL Verification: Disabled")
         
         return api_client
-    except firefly_iii_client.ApiException as e:
-        print(f"Exception lors de l'appel à l'API Firefly III: {e}")
-        raise
     except Exception as e:
         print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
         raise
