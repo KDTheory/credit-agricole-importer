@@ -43,14 +43,18 @@ def init_firefly_client(config):
             value={}
         )
 
-        # Désactiver les avertissements liés à l'insécurité SSL
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        # Vérifiez si les valeurs sont présentes
+        if not hostname or not personal_token:
+            raise ValueError("Hostname ou token personnel manquant dans la configuration.")
+
+        # Créer la configuration sans champs supplémentaires
+        configuration = firefly_iii_client.Configuration(
+            host=hostname,
+            api_key={'Authorization': f"Bearer {personal_token}"}
+        )
 
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
-
-        # Désactiver la vérification SSL pour le client REST
-        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
 
         print("Configuration Firefly III :")
         print("Host:", hostname)
