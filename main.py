@@ -19,11 +19,6 @@ CONFIG_FILE = '/app/config.ini'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class CustomConfiguration(firefly_iii_client.Configuration):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.verify_ssl = False
-
 def load_config():
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
@@ -40,9 +35,11 @@ def init_firefly_client(config):
         url = firefly_section.get('url')
         personal_access_token = firefly_section.get('personal_access_token')
 
-        # Vérifiez si les valeurs sont présentes
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
+
+        # Désactiver les avertissements liés à l'insécurité SSL
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         configuration = CustomConfiguration(
             host=url,
@@ -54,6 +51,10 @@ def init_firefly_client(config):
 
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
+
+        # Désactiver la vérification SSL pour le client REST
+        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
+        api_client.rest_client.pool_manager.connection_pool_kw['assert_hostname'] = False
 
         print("Configuration Firefly III :")
         print("URL:", url)
