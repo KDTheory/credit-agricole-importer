@@ -29,21 +29,21 @@ def load_config():
     }
 
 def init_firefly_client(config):
+def init_firefly_client(config):
     try:
         firefly_section = config['FireflyIII']
+        hostname = firefly_section.get('hostname')
+        personal_token = firefly_section.get('personal_token')
+
         configuration = firefly_iii_client.Configuration(
-            host=firefly_section.get('url'),
-            api_key={'Authorization': f"Bearer {firefly_section.get('personal_access_token')}"},
-            editable=False, 
-            title="firefly.api_version",  
-            value={}
+            host=hostname,
+            api_key={'Authorization': f"Bearer {personal_token}"}
         )
-        
-        # Créer le client API avec la configuration
+
         api_client = firefly_iii_client.ApiClient(configuration)
 
         print("Configuration Firefly III :")
-        print("Host:", configuration.host)
+        print("Host:", hostname)
         
         return api_client
     except Exception as e:
