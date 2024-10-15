@@ -29,7 +29,6 @@ def load_config():
     }
 
 def init_firefly_client(config):
-def init_firefly_client(config):
     try:
         firefly_section = config['FireflyIII']
         hostname = firefly_section.get('hostname')
