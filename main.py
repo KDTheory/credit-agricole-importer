@@ -19,6 +19,11 @@ CONFIG_FILE = '/app/config.ini'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+class CustomConfiguration(firefly_iii_client.Configuration):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.verify_ssl = False
+
 def load_config():
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
@@ -39,7 +44,7 @@ def init_firefly_client(config):
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
 
-        configuration = firefly_iii_client.Configuration(
+        configuration = CustomConfiguration(
             host=url,
             api_key={'Authorization': f"Bearer {personal_access_token}"},
             editable=False,
