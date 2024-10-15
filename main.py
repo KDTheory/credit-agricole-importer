@@ -39,8 +39,6 @@ def init_firefly_client(config):
             title="firefly.api_version",  
             value={}
         )
-        # configuration.access_token = firefly_section.get('personal_access_token')
-
         # Supprimer les avertissements liés à l'insécurité SSL
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -48,18 +46,14 @@ def init_firefly_client(config):
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
 
+        # Désactiver la vérification SSL au niveau du client API si nécessaire
+        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
+
         # Initialiser l'API de configuration
         api_instance = configuration_api.ConfigurationApi(api_client)
 
-        # Obtenir la configuration du système
-        config_filter = ConfigurationFilter(
-            title="firefly.api_version"
-        )
-        api_version = api_instance.get_configuration(config_filter=config_filter)
-
         print("Configuration Firefly III :")
         print("Host:", configuration.host)
-        print("API Version:", api_version)
         print("SSL Verification: Disabled")
         
         return api_client
