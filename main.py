@@ -32,32 +32,26 @@ def load_config():
 def init_firefly_client(config):
     try:
         firefly_section = config['FireflyIII']
-        hostname = firefly_section.get('hostname')
-        personal_token = firefly_section.get('personal_token')
+        url = firefly_section.get('url')
+        personal_access_token = firefly_section.get('personal_access_token')
+
+        # Vérifiez si les valeurs sont présentes
+        if not url or not personal_access_token:
+            raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
 
         configuration = firefly_iii_client.Configuration(
-            host=hostname,
-            api_key={'Authorization': f"Bearer {personal_token}"},
+            host=url,
+            api_key={'Authorization': f"Bearer {personal_access_token}"},
             editable=False,
             title="firefly.api_version",
             value={}
-        )
-
-        # Vérifiez si les valeurs sont présentes
-        if not hostname or not personal_token:
-            raise ValueError("Hostname ou token personnel manquant dans la configuration.")
-
-        # Créer la configuration sans champs supplémentaires
-        configuration = firefly_iii_client.Configuration(
-            host=hostname,
-            api_key={'Authorization': f"Bearer {personal_token}"}
         )
 
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
 
         print("Configuration Firefly III :")
-        print("Host:", hostname)
+        print("URL:", url)
         
         return api_client
     except Exception as e:
