@@ -37,9 +37,9 @@ def init_firefly_client(config):
         configuration = firefly_iii_client.Configuration(
             host=hostname,
             api_key={'Authorization': f"Bearer {personal_token}"},
-            editable=False,  # Ajout du champ editable
-            title="Firefly III API Configuration",  # Ajout du champ title
-            value={}  # Ajout du champ value
+            editable=False,
+            title="firefly.api_version",
+            value={}
         )
 
         api_client = firefly_iii_client.ApiClient(configuration)
