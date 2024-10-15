@@ -41,9 +41,6 @@ def init_firefly_client(config):
         )
         # configuration.access_token = firefly_section.get('personal_access_token')
 
-        # Désactiver la vérification SSL si nécessaire
-        configuration.verify_ssl = False
-
         # Supprimer les avertissements liés à l'insécurité SSL
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
