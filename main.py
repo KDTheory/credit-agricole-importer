@@ -5,13 +5,11 @@ import configparser
 import logging
 import os
 import sys
-import ssl
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
 print(f"Version de firefly-iii-client : {firefly_iii_client.__version__}")
 from firefly_iii_client import Configuration
 from firefly_iii_client.api import accounts_api, transactions_api, configuration_api
-import urllib3
 
 # Constants
 CONFIG_FILE = '/app/config.ini'
@@ -41,7 +39,6 @@ def init_firefly_client(config):
             value={}
         )
         
-
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
 
