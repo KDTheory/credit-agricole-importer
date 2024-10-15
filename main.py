@@ -7,6 +7,7 @@ import os
 import sys
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
+print(f"Version de firefly-iii-client : {firefly_iii_client.__version__}")
 from firefly_iii_client import Configuration
 from firefly_iii_client.api import accounts_api, transactions_api, configuration_api
 import urllib3
@@ -33,11 +34,12 @@ def init_firefly_client(config):
         firefly_section = config['FireflyIII']
         configuration = firefly_iii_client.Configuration(
             host=firefly_section.get('url'),
+            api_key={'Authorization': f"Bearer {firefly_section.get('personal_access_token')}"},
             editable=False, 
             title="firefly.api_version",  
             value={}
         )
-        configuration.access_token = firefly_section.get('personal_access_token')
+        # configuration.access_token = firefly_section.get('personal_access_token')
 
         # Désactiver la vérification SSL si nécessaire
         configuration.verify_ssl = False
