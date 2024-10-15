@@ -10,6 +10,7 @@ import firefly_iii_client
 print(f"Version de firefly-iii-client : {firefly_iii_client.__version__}")
 from firefly_iii_client import Configuration
 from firefly_iii_client.api import accounts_api, transactions_api, configuration_api
+import urllib3
 
 # Constants
 CONFIG_FILE = '/app/config.ini'
@@ -42,7 +43,14 @@ def init_firefly_client(config):
             value={}
         )
 
+        # Désactiver les avertissements liés à l'insécurité SSL
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+        # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
+
+        # Désactiver la vérification SSL pour le client REST
+        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
 
         print("Configuration Firefly III :")
         print("Host:", hostname)
