@@ -5,6 +5,7 @@ import configparser
 import logging
 import os
 import sys
+import ssl
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
 print(f"Version de firefly-iii-client : {firefly_iii_client.__version__}")
