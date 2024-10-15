@@ -32,7 +32,10 @@ def init_firefly_client(config):
     try:
         firefly_section = config['FireflyIII']
         configuration = firefly_iii_client.Configuration(
-            host=firefly_section.get('url')
+            host=firefly_section.get('url'),
+            editable=False, 
+            title="firefly.api_version",  
+            value={}
         )
         configuration.access_token = firefly_section.get('personal_access_token')
 
