@@ -38,9 +38,6 @@ def init_firefly_client(config):
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
 
-        # Désactiver les avertissements liés à l'insécurité SSL
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
         configuration = CustomConfiguration(
             host=url,
             api_key={'Authorization': f"Bearer {personal_access_token}"},
@@ -51,10 +48,6 @@ def init_firefly_client(config):
 
         # Créer le client API avec la configuration
         api_client = firefly_iii_client.ApiClient(configuration)
-
-        # Désactiver la vérification SSL pour le client REST
-        api_client.rest_client.pool_manager.connection_pool_kw['cert_reqs'] = 'CERT_NONE'
-        api_client.rest_client.pool_manager.connection_pool_kw['assert_hostname'] = False
 
         print("Configuration Firefly III :")
         print("URL:", url)
