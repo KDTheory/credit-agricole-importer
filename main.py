@@ -151,9 +151,9 @@ def main():
                     except requests.RequestException as e:
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
             
-        except Exception as e:
-            logger.error(f"Erreur lors du traitement du compte : {str(e)}")
-            logger.error(f"Détails du compte: {vars(account)}")
+            except Exception as e:
+                logger.error(f"Erreur lors du traitement du compte : {str(e)}")
+                logger.error(f"Détails du compte: {vars(account)}")
                 
                 logger.info("Importation terminée avec succès")
     
