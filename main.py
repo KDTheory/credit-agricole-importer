@@ -148,7 +148,7 @@ def main():
                         }
                         response = firefly_client.create_transaction(transaction_data)
                         logger.info(f"Transaction importée : {response}")
-                    except requests.RequestException as e:
+                except requests.RequestException as e:
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
     
     except Exception as e:
