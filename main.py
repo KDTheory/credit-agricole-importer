@@ -86,6 +86,9 @@ def main():
         firefly_client = init_firefly_client(config)
         
         for account in accounts:
+            if not hasattr(account, 'numero') or not hasattr(account, 'produit'):
+                logger.error(f"L'objet compte ne contient pas les attributs attendus: {vars(account)}")
+                continue
             try:
                 account_info = f"Compte: {account.numero} - Produit: {account.produit} - Solde: {account.get_solde()}"
                 logger.info(account_info)
