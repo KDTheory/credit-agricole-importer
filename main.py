@@ -87,12 +87,12 @@ def main():
         
         for account in accounts:
             try:
-                account_info = f"Compte: {account.name} - Solde: {account.balance}"
+                account_info = f"Compte: {account.account_name} - Solde: {account.balance}"
                 logger.info(account_info)
                 
                 # Récupération des transactions pour chaque compte
                 transactions = ca_cli.get_transactions(account)
-                logger.info(f"Nombre de transactions récupérées pour le compte {account.name}: {len(transactions)}")
+                logger.info(f"Nombre de transactions récupérées pour le compte {account.account_name}: {len(transactions)}")
                 
                 # Importation des transactions dans Firefly III
                 for transaction in transactions:
