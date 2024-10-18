@@ -125,13 +125,12 @@ def main():
         
         for account in accounts:
             try:
-                # Utilisez les attributs corrects de l'objet Account
-                account_info = f"Compte: {account.id} - Solde: {account.balance}"
+                account_info = f"Compte: {account.numeroCompte} - Solde: {account.account['solde']} {account.account['libelleDevise']}"
                 logger.info(account_info)
                 
                 # Récupération des transactions pour chaque compte
                 transactions = ca_cli.get_transactions(account)
-                logger.info(f"Nombre de transactions récupérées pour le compte {account.id}: {len(transactions)}")
+                logger.info(f"Nombre de transactions récupérées pour le compte {account.numeroCompte}: {len(transactions)}")
                 
                 # Importation des transactions dans Firefly III
                 for transaction in transactions:
@@ -142,8 +141,8 @@ def main():
                                 "date": transaction.date.strftime("%Y-%m-%d"),
                                 "amount": str(abs(transaction.amount)),
                                 "description": transaction.label,
-                                "source_name": account.id if transaction.amount < 0 else "External Account",
-                                "destination_name": "External Account" if transaction.amount < 0 else account.id
+                                "source_name": account.numeroCompte if transaction.amount < 0 else "External Account",
+                                "destination_name": "External Account" if transaction.amount < 0 else account.numeroCompte
                             }]
                         }
                         response = firefly_client.create_transaction(transaction_data)
@@ -152,7 +151,7 @@ def main():
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
             
             except Exception as e:
-                logger.error(f"Erreur lors du traitement du compte : {str(e)}")
+                logger.error(f"Erreur lors du traitement du compte {account.numeroCompte}: {str(e)}")
                 logger.error(f"Détails du compte: {vars(account)}")
                 
                 logger.info("Importation terminée avec succès")
