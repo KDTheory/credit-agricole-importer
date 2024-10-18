@@ -38,7 +38,7 @@ def init_firefly_client(config):
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
 
-        configuration = CustomConfiguration(
+        configuration = Configuration(
             host=url,
             api_key={'Authorization': f"Bearer {personal_access_token}"},
             editable=False,
