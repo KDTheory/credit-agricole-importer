@@ -87,15 +87,12 @@ def main():
         
         for account in accounts:
             try:
-                account_name = getattr(account, 'name', 'Compte inconnu')
-                account_balance = getattr(account, 'balance', 'Solde inconnu')
-                account_info = f"Compte: {account_name} - Solde: {account_balance}"
+                account_info = f"Compte: {account.numero} - Produit: {account.produit} - Solde: {account.get_solde()}"
                 logger.info(account_info)
-                logger.info(f"Structure de l'objet Account: {vars(account)}")
                 
                 # Récupération des transactions pour chaque compte
                 transactions = ca_cli.get_transactions(account)
-                logger.info(f"Nombre de transactions récupérées pour le compte {account.account_name}: {len(transactions)}")
+                logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
                 
                 # Importation des transactions dans Firefly III
                 for transaction in transactions:
@@ -106,17 +103,17 @@ def main():
                                 "date": transaction.date.strftime("%Y-%m-%d"),
                                 "amount": str(abs(transaction.amount)),
                                 "description": transaction.label,
-                                "source_name": account.name if transaction.amount < 0 else "External Account",
-                                "destination_name": "External Account" if transaction.amount < 0 else account.name
+                                "source_name": account.numero if transaction.amount < 0 else "External Account",
+                                "destination_name": "External Account" if transaction.amount < 0 else account.numero
                             }]
                         }
                         response = firefly_client.create_transaction(transaction_data)
                         logger.info(f"Transaction importée : {response}")
                     except requests.RequestException as e:
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
-                
+            
             except Exception as e:
-                logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
+                logger.error(f"Erreur lors du traitement du compte {account.numero}: {str(e)}")
                 logger.error(f"Détails du compte: {vars(account)}")
         
         logger.info("Importation terminée avec succès")
