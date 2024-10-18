@@ -104,11 +104,8 @@ def main():
         firefly_client = init_firefly_client(config)
         
         for account in accounts:
-            if not hasattr(account, 'numero') or not hasattr(account, 'produit'):
-                logger.error(f"L'objet compte ne contient pas les attributs attendus: {vars(account)}")
-                continue
             try:
-                account_info = f"Compte: {account.numero} - Produit: {account.produit} - Solde: {account.get_solde()}"
+                account_info = f"Compte: {account.numero} - Solde: {account.get_solde()}"
                 logger.info(account_info)
                 
                 # Récupération des transactions pour chaque compte
@@ -118,24 +115,22 @@ def main():
                 # Importation des transactions dans Firefly III
                 for transaction in transactions:
                     try:
-                        transaction_data = {
-                            "transactions": [{
-                                "type": "withdrawal" if transaction.amount < 0 else "deposit",
-                                "date": transaction.date.strftime("%Y-%m-%d"),
-                                "amount": str(abs(transaction.amount)),
-                                "description": transaction.label,
-                                "source_name": account.numero if transaction.amount < 0 else "External Account",
-                                "destination_name": "External Account" if transaction.amount < 0 else account.numero
-                            }]
-                        }
-                        response = firefly_client.create_transaction(transaction_data)
+                        transaction_split = firefly_iii_client.TransactionSplitStore(
+                            type="withdrawal" if transaction.amount < 0 else "deposit",
+                            date=transaction.date.strftime("%Y-%m-%d"),
+                            amount=str(abs(transaction.amount)),
+                            description=transaction.label,
+                            source_name=account.numero if transaction.amount < 0 else "External Account",
+                            destination_name="External Account" if transaction.amount < 0 else account.numero
+                        )
+                        response = transactions_api.store_transaction(transaction_split_store=transaction_split)
                         logger.info(f"Transaction importée : {response}")
-                    except requests.RequestException as e:
+                    except firefly_iii_client.ApiException as e:
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
-            
+                
             except Exception as e:
                 logger.error(f"Erreur lors du traitement du compte {account.numero}: {str(e)}")
-                logger.error(f"Détails du compte: {vars(account)}")
+                logger.error(f"Détails du compte: {vars(account)}")  # Ajout pour afficher tous les attributs du compte
         
         logger.info("Importation terminée avec succès")
     
