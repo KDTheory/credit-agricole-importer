@@ -87,8 +87,11 @@ def main():
         
         for account in accounts:
             try:
-                account_info = f"Compte: {account.account_name} - Solde: {account.balance}"
+                account_name = getattr(account, 'name', 'Compte inconnu')
+                account_balance = getattr(account, 'balance', 'Solde inconnu')
+                account_info = f"Compte: {account_name} - Solde: {account_balance}"
                 logger.info(account_info)
+                logger.info(f"Structure de l'objet Account: {vars(account)}")
                 
                 # Récupération des transactions pour chaque compte
                 transactions = ca_cli.get_transactions(account)
@@ -114,6 +117,7 @@ def main():
                 
             except Exception as e:
                 logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
+                logger.error(f"Détails du compte: {vars(account)}")
         
         logger.info("Importation terminée avec succès")
     
