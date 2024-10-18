@@ -116,42 +116,44 @@ def main():
         # Récupération des comptes
         accounts = ca_cli.get_accounts()
         logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
+        for account in accounts:
+            logger.info(f"Attributs du compte : {vars(account)}")
         
         # Initialisation du client Firefly III
         api_client = init_firefly_client(config)
         transactions_api = firefly_iii_client.TransactionsApi(api_client)
         
-        for account in accounts:
+for account in accounts:
+    try:
+        # Utilisez les attributs corrects de l'objet Account
+        account_info = f"Compte: {account.id} - Solde: {account.balance}"
+        logger.info(account_info)
+        
+        # Récupération des transactions pour chaque compte
+        transactions = ca_cli.get_transactions(account)
+        logger.info(f"Nombre de transactions récupérées pour le compte {account.id}: {len(transactions)}")
+        
+        # Importation des transactions dans Firefly III
+        for transaction in transactions:
             try:
-                account_info = f"Compte: {account.numero} - Solde: {account.get_solde()}"
-                logger.info(account_info)
-                
-                # Récupération des transactions pour chaque compte
-                transactions = ca_cli.get_transactions(account)
-                logger.info(f"Nombre de transactions récupérées pour le compte {account.numero}: {len(transactions)}")
-                
-                # Importation des transactions dans Firefly III
-                for transaction in transactions:
-                    try:
-                        transaction_split = firefly_iii_client.TransactionSplitStore(
-                            type="withdrawal" if transaction.amount < 0 else "deposit",
-                            date=transaction.date.strftime("%Y-%m-%d"),
-                            amount=str(abs(transaction.amount)),
-                            description=transaction.label,
-                            source_name=account.numero if transaction.amount < 0 else "External Account",
-                            destination_name="External Account" if transaction.amount < 0 else account.numero
-                        )
-                        response = firefly_client.create_transaction({"transactions": [transaction_split]})
-                        logger.info(f"Transaction importée : {response}")
-                    except requests.RequestException as e:
-                        logger.error(f"Erreur lors de l'importation de la transaction: {e}")
-                
-            except Exception as e:
-                logger.error(f"Erreur lors du traitement du compte {account.numero}: {str(e)}")
-                logger.error(f"Détails du compte: {vars(account)}")
-                
-            except Exception as e:
-                logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
+                transaction_data = {
+                    "transactions": [{
+                        "type": "withdrawal" if transaction.amount < 0 else "deposit",
+                        "date": transaction.date.strftime("%Y-%m-%d"),
+                        "amount": str(abs(transaction.amount)),
+                        "description": transaction.label,
+                        "source_name": account.id if transaction.amount < 0 else "External Account",
+                        "destination_name": "External Account" if transaction.amount < 0 else account.id
+                    }]
+                }
+                response = firefly_client.create_transaction(transaction_data)
+                logger.info(f"Transaction importée : {response}")
+            except requests.RequestException as e:
+                logger.error(f"Erreur lors de l'importation de la transaction: {e}")
+    
+    except Exception as e:
+        logger.error(f"Erreur lors du traitement du compte : {str(e)}")
+        logger.error(f"Détails du compte: {vars(account)}")
         
         logger.info("Importation terminée avec succès")
     
