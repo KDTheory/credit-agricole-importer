@@ -11,6 +11,7 @@ print(f"Version de firefly-iii-client : {firefly_iii_client.__version__}")
 from firefly_iii_client import Configuration
 from firefly_iii_client.api import accounts_api, transactions_api, configuration_api
 import urllib3
+import requests
 
 # Constants
 CONFIG_FILE = '/app/config.ini'
@@ -38,24 +39,87 @@ def init_firefly_client(config):
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
 
-        configuration = Configuration(
-            host=url,
-            api_key={'Authorization': f"Bearer {personal_access_token}"},
-            editable=False,
-            title="firefly.api_version",
-            value={}
-        )
+        # Désactiver les avertissements liés à l'insécurité SSL
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-        # Créer le client API avec la configuration
-        api_client = firefly_iii_client.ApiClient(configuration)
+        session = requests.Session()
+        session.headers.update({
+            'Authorization': f"Bearer {personal_access_token}",
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        })
+        session.verify = False  # Désactive la vérification SSL
 
         print("Configuration Firefly III :")
         print("URL:", url)
         
-        return api_client
+        return FireflyIIIClient(url, session)
     except Exception as e:
         print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
         raise
+
+class FireflyIIIClient:
+    def __init__(self, base_url, session):
+        self.base_url = base_url
+        self.session = session
+
+    def get_accounts(self):
+        response = self.session.get(f"{self.base_url}/api/v1/accounts")
+        response.raise_for_status()
+        return response.json()['data']
+
+    def create_transaction(self, transaction_data):
+        response = self.session.post(f"{self.base_url}/api/v1/transactions", json=transaction_data)
+        response.raise_for_status()
+        return response.json()['data']
+
+# Modifier la fonction main pour utiliser cette nouvelle approche
+def main():
+    try:
+        logger.info("Démarrage de l'importation des données du Crédit Agricole")
+        
+        config = load_config()
+        
+        # ... (le reste du code pour initialiser le client Crédit Agricole reste inchangé)
+
+        # Initialisation du client Firefly III
+        firefly_client = init_firefly_client(config)
+        
+        for account in accounts:
+            try:
+                account_info = f"Compte: {account.name} - Solde: {account.balance}"
+                logger.info(account_info)
+                
+                # Récupération des transactions pour chaque compte
+                transactions = ca_cli.get_transactions(account)
+                logger.info(f"Nombre de transactions récupérées pour le compte {account.name}: {len(transactions)}")
+                
+                # Importation des transactions dans Firefly III
+                for transaction in transactions:
+                    try:
+                        transaction_data = {
+                            "transactions": [{
+                                "type": "withdrawal" if transaction.amount < 0 else "deposit",
+                                "date": transaction.date.strftime("%Y-%m-%d"),
+                                "amount": str(abs(transaction.amount)),
+                                "description": transaction.label,
+                                "source_name": account.name if transaction.amount < 0 else "External Account",
+                                "destination_name": "External Account" if transaction.amount < 0 else account.name
+                            }]
+                        }
+                        response = firefly_client.create_transaction(transaction_data)
+                        logger.info(f"Transaction importée : {response}")
+                    except requests.RequestException as e:
+                        logger.error(f"Erreur lors de l'importation de la transaction: {e}")
+                
+            except Exception as e:
+                logger.error(f"Erreur lors du traitement du compte {account.name}: {str(e)}")
+        
+        logger.info("Importation terminée avec succès")
+    
+    except Exception as e:
+        logger.exception("Une erreur s'est produite lors de l'importation")
+        sys.exit(1)
 
 def import_transactions(transactions_api_instance, account, transactions):
     imported_count = 0
