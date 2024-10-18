@@ -148,14 +148,14 @@ def main():
                         }
                         response = firefly_client.create_transaction(transaction_data)
                         logger.info(f"Transaction importée : {response}")
-                except requests.RequestException as e:
+                    except requests.RequestException as e:
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
-    
-    except Exception as e:
-        logger.error(f"Erreur lors du traitement du compte : {str(e)}")
-        logger.error(f"Détails du compte: {vars(account)}")
-        
-        logger.info("Importation terminée avec succès")
+            
+        except Exception as e:
+            logger.error(f"Erreur lors du traitement du compte : {str(e)}")
+            logger.error(f"Détails du compte: {vars(account)}")
+                
+                logger.info("Importation terminée avec succès")
     
     except Exception as e:
         logger.exception("Une erreur s'est produite lors de l'importation")
