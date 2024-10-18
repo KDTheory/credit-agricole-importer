@@ -80,8 +80,26 @@ def main():
         
         config = load_config()
         
-        # ... (le reste du code pour initialiser le client Crédit Agricole reste inchangé)
-
+        # Initialisation du client Crédit Agricole
+        ca_config = config['CreditAgricole']
+        ca_cli = CreditAgricoleClient(config)
+        ca_cli.department = ca_config['department']
+        ca_cli.account_id = ca_config['username']
+        ca_cli.password = ca_config['password']
+        ca_cli.enabled_accounts = ca_config.get('import_account_id_list', '')
+        ca_cli.get_transactions_period = ca_config.get('get_transactions_period_days', '30')
+        ca_cli.max_transactions = ca_config.get('max_transactions_per_get', '300')
+        ca_cli.validate()
+        logger.info("Client Crédit Agricole initialisé")
+        
+        # Initialisation de la session
+        ca_cli.init_session()
+        logger.info("Session Crédit Agricole initialisée")
+        
+        # Récupération des comptes
+        accounts = ca_cli.get_accounts()
+        logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
+        
         # Initialisation du client Firefly III
         firefly_client = init_firefly_client(config)
         
