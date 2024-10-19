@@ -3,13 +3,9 @@
 
 import configparser
 import logging
-import os
 import sys
 from creditagricole import CreditAgricoleClient
 import firefly_iii_client
-print(f"Version de firefly-iii-client : {firefly_iii_client.__version__}")
-from firefly_iii_client import Configuration
-from firefly_iii_client.api import accounts_api, transactions_api, configuration_api
 import urllib3
 import requests
 
@@ -17,18 +13,13 @@ import requests
 CONFIG_FILE = '/app/config.ini'
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def load_config():
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
     return config
-    
-    return {
-        "firefly_url": config['FireflyIII'].get('url'), 
-        "firefly_token": config['FireflyIII'].get('personal_access_token'),
-    }
 
 def init_firefly_client(config):
     try:
@@ -39,7 +30,6 @@ def init_firefly_client(config):
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
 
-        # Désactiver les avertissements liés à l'insécurité SSL
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         session = requests.Session()
@@ -48,14 +38,12 @@ def init_firefly_client(config):
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         })
-        session.verify = False  # Désactive la vérification SSL
+        session.verify = False
 
-        print("Configuration Firefly III :")
-        print("URL:", url)
-        
+        logger.info(f"Client Firefly III initialisé - URL: {url}")
         return FireflyIIIClient(url, session)
     except Exception as e:
-        print(f"Erreur lors de l'initialisation du client Firefly III : {e}")
+        logger.error(f"Erreur lors de l'initialisation du client Firefly III : {e}")
         raise
 
 class FireflyIIIClient:
@@ -68,28 +56,38 @@ class FireflyIIIClient:
         response.raise_for_status()
         return response.json()['data']
 
+    def create_account(self, account_data):
+        response = self.session.post(f"{self.base_url}/api/v1/accounts", json=account_data)
+        response.raise_for_status()
+        return response.json()['data']
+
     def create_transaction(self, transaction_data):
         response = self.session.post(f"{self.base_url}/api/v1/transactions", json=transaction_data)
         response.raise_for_status()
         return response.json()['data']
 
-def import_transactions(transactions_api_instance, account, transactions):
-    imported_count = 0
-    for transaction in transactions:
-        try:
-            transaction_split = TransactionSplitStore(
-                type="withdrawal" if transaction.amount < 0 else "deposit",
-                date=transaction.date.strftime("%Y-%m-%d"),
-                amount=str(abs(transaction.amount)),
-                description=transaction.label,
-                source_name=account.name if transaction.amount < 0 else "External Account",
-                destination_name="External Account" if transaction.amount < 0 else account.name
-            )
-            transactions_api_instance.store_transaction(transaction_split_store=transaction_split)
-            imported_count += 1
-        except firefly_iii_client.ApiException as e:
-            logger.error(f"Exception lors de l'importation de la transaction: {e}")
-    return imported_count
+def get_or_create_firefly_account(firefly_client, ca_account):
+    try:
+        firefly_accounts = firefly_client.get_accounts()
+        for account in firefly_accounts:
+            if account['attributes']['account_number'] == ca_account.numeroCompte:
+                logger.info(f"Compte Firefly existant trouvé pour {ca_account.numeroCompte}")
+                return account['id']
+
+        # Si le compte n'existe pas, on le crée
+        new_account_data = {
+            "name": ca_account.account['libelleProduit'],
+            "type": "asset",
+            "account_number": ca_account.numeroCompte,
+            "opening_balance": str(ca_account.account['solde']),
+            "currency_code": "EUR"
+        }
+        new_account = firefly_client.create_account(new_account_data)
+        logger.info(f"Nouveau compte Firefly créé pour {ca_account.numeroCompte}")
+        return new_account['id']
+    except Exception as e:
+        logger.error(f"Erreur lors de la création/récupération du compte Firefly : {e}")
+        return None
 
 def main():
     try:
@@ -107,32 +105,30 @@ def main():
         ca_cli.get_transactions_period = ca_config.get('get_transactions_period_days', '30')
         ca_cli.max_transactions = ca_config.get('max_transactions_per_get', '300')
         ca_cli.validate()
-        logger.info("Client Crédit Agricole initialisé")
-        
-        # Initialisation de la session
         ca_cli.init_session()
-        logger.info("Session Crédit Agricole initialisée")
+        logger.info("Client Crédit Agricole initialisé et session ouverte")
         
         # Récupération des comptes
         accounts = ca_cli.get_accounts()
         logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
-        for account in accounts:
-            logger.info(f"Attributs du compte : {vars(account)}")
         
         # Initialisation du client Firefly III
-        api_client = init_firefly_client(config)
-        transactions_api = firefly_iii_client.TransactionsApi(api_client)
+        firefly_client = init_firefly_client(config)
         
         for account in accounts:
             try:
-                account_info = f"Compte: {account.numeroCompte} - Solde: {account.account['solde']} {account.account['libelleDevise']}"
-                logger.info(account_info)
+                logger.info(f"Traitement du compte: {account.numeroCompte} - Solde: {account.account['solde']} {account.account['libelleDevise']}")
                 
-                # Récupération des transactions pour chaque compte
+                firefly_account_id = get_or_create_firefly_account(firefly_client, account)
+                if not firefly_account_id:
+                    logger.error(f"Impossible de traiter le compte {account.numeroCompte}: échec de création/récupération dans Firefly")
+                    continue
+
+                # Récupération et importation des transactions
                 transactions = ca_cli.get_transactions(account)
-                logger.info(f"Nombre de transactions récupérées pour le compte {account.numeroCompte}: {len(transactions)}")
+                logger.info(f"Nombre de transactions récupérées : {len(transactions)}")
                 
-                # Importation des transactions dans Firefly III
+                imported_count = 0
                 for transaction in transactions:
                     try:
                         transaction_data = {
@@ -141,20 +137,23 @@ def main():
                                 "date": transaction.date.strftime("%Y-%m-%d"),
                                 "amount": str(abs(transaction.amount)),
                                 "description": transaction.label,
-                                "source_name": account.numeroCompte if transaction.amount < 0 else "External Account",
-                                "destination_name": "External Account" if transaction.amount < 0 else account.numeroCompte
+                                "source_id": firefly_account_id if transaction.amount < 0 else None,
+                                "destination_id": firefly_account_id if transaction.amount >= 0 else None,
+                                "source_name": "External Account" if transaction.amount >= 0 else None,
+                                "destination_name": "External Account" if transaction.amount < 0 else None
                             }]
                         }
-                        response = firefly_client.create_transaction(transaction_data)
-                        logger.info(f"Transaction importée : {response}")
+                        firefly_client.create_transaction(transaction_data)
+                        imported_count += 1
                     except requests.RequestException as e:
                         logger.error(f"Erreur lors de l'importation de la transaction: {e}")
+                
+                logger.info(f"Transactions importées pour le compte {account.numeroCompte}: {imported_count}/{len(transactions)}")
             
             except Exception as e:
                 logger.error(f"Erreur lors du traitement du compte {account.numeroCompte}: {str(e)}")
-                logger.error(f"Détails du compte: {vars(account)}")
-                
-                logger.info("Importation terminée avec succès")
+        
+        logger.info("Importation terminée avec succès")
     
     except Exception as e:
         logger.exception("Une erreur s'est produite lors de l'importation")
