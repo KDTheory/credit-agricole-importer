@@ -16,6 +16,13 @@ CONFIG_FILE = '/app/config.ini'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+def mask_sensitive_info(text):
+    # Masquer les numéros de compte
+    masked_text = ' '.join(['XXXXXXXX' + s[-4:] if s.isdigit() and len(s) > 8 else s for s in text.split()])
+    # Masquer les soldes
+    masked_text = masked_text.replace(r'\d+\.\d+', 'XXX.XX')
+    return masked_text
+
 def load_config():
     config = configparser.ConfigParser()
     config.read(CONFIG_FILE)
@@ -40,10 +47,10 @@ def init_firefly_client(config):
         })
         session.verify = False
 
-        logger.info(f"Client Firefly III initialisé - URL: {url}")
+        logger.info(f"Client Firefly III initialisé - URL: {mask_sensitive_info(url)}")
         return FireflyIIIClient(url, session)
     except Exception as e:
-        logger.error(f"Erreur lors de l'initialisation du client Firefly III : {e}")
+        logger.error(f"Erreur lors de l'initialisation du client Firefly III : {str(e)}")
         raise
 
 class FireflyIIIClient:
@@ -71,7 +78,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         firefly_accounts = firefly_client.get_accounts()
         for account in firefly_accounts:
             if account['attributes']['account_number'] == ca_account.numeroCompte:
-                logger.info(f"Compte Firefly existant trouvé pour {ca_account.numeroCompte}")
+                logger.info(f"Compte Firefly existant trouvé pour {mask_sensitive_info(ca_account.numeroCompte)}")
                 return account['id']
 
         # Si le compte n'existe pas, on le crée
@@ -83,10 +90,10 @@ def get_or_create_firefly_account(firefly_client, ca_account):
             "currency_code": "EUR"
         }
         new_account = firefly_client.create_account(new_account_data)
-        logger.info(f"Nouveau compte Firefly créé pour {ca_account.numeroCompte}")
+        logger.info(f"Nouveau compte Firefly créé pour {mask_sensitive_info(ca_account.numeroCompte)}")
         return new_account['id']
     except Exception as e:
-        logger.error(f"Erreur lors de la création/récupération du compte Firefly : {e}")
+        logger.error(f"Erreur lors de la création/récupération du compte Firefly : {str(e)}")
         return None
 
 def main():
@@ -117,11 +124,11 @@ def main():
         
         for account in accounts:
             try:
-                logger.info(f"Traitement du compte: {account.numeroCompte} - Solde: {account.account['solde']} {account.account['libelleDevise']}")
+                logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde: {mask_sensitive_info(str(account.account['solde']))} {account.account['libelleDevise']}")
                 
                 firefly_account_id = get_or_create_firefly_account(firefly_client, account)
                 if not firefly_account_id:
-                    logger.error(f"Impossible de traiter le compte {account.numeroCompte}: échec de création/récupération dans Firefly")
+                    logger.error(f"Impossible de traiter le compte {mask_sensitive_info(account.numeroCompte)}: échec de création/récupération dans Firefly")
                     continue
 
                 # Récupération et importation des transactions
@@ -146,12 +153,12 @@ def main():
                         firefly_client.create_transaction(transaction_data)
                         imported_count += 1
                     except requests.RequestException as e:
-                        logger.error(f"Erreur lors de l'importation de la transaction: {e}")
+                        logger.error(f"Erreur lors de l'importation de la transaction: {str(e)}")
                 
-                logger.info(f"Transactions importées pour le compte {account.numeroCompte}: {imported_count}/{len(transactions)}")
+                logger.info(f"Transactions importées pour le compte {mask_sensitive_info(account.numeroCompte)}: {imported_count}/{len(transactions)}")
             
             except Exception as e:
-                logger.error(f"Erreur lors du traitement du compte {account.numeroCompte}: {str(e)}")
+                logger.error(f"Erreur lors du traitement du compte {mask_sensitive_info(account.numeroCompte)}: {str(e)}")
         
         logger.info("Importation terminée avec succès")
     
