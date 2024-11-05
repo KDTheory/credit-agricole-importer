@@ -94,7 +94,7 @@ class CreditAgricoleClient:
             self.logger.error(f"Erreur lors de la récupération des comptes : {str(e)}")
             raise
 
-    def get_transactions(self, account_id, date_start=None, date_stop=None):
+def get_transactions(self, account, date_start=None, date_stop=None):
         self.logger.info("Récupération des transactions")
         if not self.session:
             self.logger.error("Session not initialized")
@@ -106,15 +106,25 @@ class CreditAgricoleClient:
             date_stop = datetime.now().strftime("%Y-%m-%d")
         
         try:
+            # Extraction de compteIdx et grandeFamilleCode depuis l'objet account
+            compteIdx = account.compteIdx
+            grandeFamilleCode = account.grandeFamilleCode
+
+            # Logs pour vérifier les valeurs
+            self.logger.debug(f"compteIdx: {compteIdx}, grandeFamilleCode: {grandeFamilleCode}")
+
             operations = Operations(
                 session=self.session,
+                compteIdx=compteIdx,
+                grandeFamilleCode=grandeFamilleCode,
                 date_start=date_start,
                 date_stop=date_stop
             )
-            return list(operations)
+            return list(operations)  # Convertit l'itérable en liste
         except Exception as e:
             self.logger.error(f"Erreur lors de la récupération des transactions : {str(e)}")
             raise
+
 
     def close_session(self):
         if self.session:
