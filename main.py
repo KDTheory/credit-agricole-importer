@@ -93,6 +93,10 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         # Récupération du solde avec gestion des erreurs
         solde = ca_account.account.get('solde') or ca_account.account.get('valorisation') or ca_account.account.get('balance') or '0.00'
 
+        if solde == '0.00':
+            logger.warning(f"Le compte {ca_account.numeroCompte} n'a pas de solde disponible. Il sera ignoré.")
+            return None
+
         # Vérification du type de compte
         account_type = "asset"
         account_role = "defaultAsset"  # Vous pouvez ajuster en fonction du type réel du compte
