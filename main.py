@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 CONFIG_FILE = '/app/config.ini'
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def mask_sensitive_info(text):
