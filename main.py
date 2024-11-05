@@ -9,6 +9,7 @@ import firefly_iii_client
 import urllib3
 import requests
 import datetime
+import pprint
 from datetime import datetime, timedelta
 
 
@@ -163,6 +164,18 @@ def main():
                 imported_count = 0
                 for transaction in transactions:
                     try:
+                        logger.debug(f"Transaction object: {transaction}")
+                        logger.debug(f"Transaction attributes: {pprint.pformat(transaction.__dict__)}")
+
+                        montant = transaction.montant
+                        date_operation = transaction.dateOperation
+                        libelle = transaction.libelleOperation
+
+                        if isinstance(date_operation, str):
+                        date_operation = datetime.strptime(date_operation, "%Y-%m-%d")
+
+                        transaction_type = "withdrawal" if montant < 0 else "deposit"
+                        
                         transaction_data = {
                             "transactions": [{
                                 "type": "withdrawal" if transaction.amount < 0 else "deposit",
