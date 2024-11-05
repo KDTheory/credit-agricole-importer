@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from creditagricole_particuliers import Authenticator, Accounts
+from creditagricole_particuliers import Authenticator, Accounts, Operations
 from constant import *
 import urllib.parse
 import requests
@@ -110,7 +110,7 @@ class CreditAgricoleClient:
                 date_start=date_start,
                 date_stop=date_stop
             )
-            return operations.list
+            return list(operations)
         except Exception as e:
             self.logger.error(f"Erreur lors de la récupération des transactions : {str(e)}")
             raise
