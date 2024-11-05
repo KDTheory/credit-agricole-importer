@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
-from creditagricole_particuliers import Authenticator, Accounts, Operations
+from creditagricole_particuliers import Authenticator, Accounts
+from creditagricole_particuliers.operations import Operations
 from constant import *
 import urllib.parse
 import requests
