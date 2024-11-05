@@ -94,7 +94,7 @@ class CreditAgricoleClient:
             self.logger.error(f"Erreur lors de la récupération des comptes : {str(e)}")
             raise
 
-def get_transactions(self, account, date_start=None, date_stop=None):
+    def get_transactions(self, account, date_start=None, date_stop=None):
         self.logger.info("Récupération des transactions")
         if not self.session:
             self.logger.error("Session not initialized")
