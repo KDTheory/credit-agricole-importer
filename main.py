@@ -11,6 +11,7 @@ import requests
 import datetime
 import pprint
 from datetime import datetime, timedelta
+from dateutil import parser
 
 
 # Constants
@@ -173,7 +174,7 @@ def main():
 
                         if isinstance(date_operation, str):
                             try:
-                                date_operation = datetime.strptime(date_operation, "%b %d, %Y, %I:%M:%S %p")
+                                date_operation = parser.parse(date_operation)
                             except ValueError:
                                 logger.error(f"Erreur lors de la conversion de la date: {date_operation}")
                                 continue
@@ -183,7 +184,7 @@ def main():
                         transaction_data = {
                             "transactions": [{
                                 "type": "withdrawal" if transaction.montantOp < 0 else "deposit",
-                                "date": transaction.dateOp.strftime("%Y-%m-%d"),
+                                "date": date_operation.strftime("%Y-%m-%d"),
                                 "amount": str(abs(transaction.montantOp)),
                                 "description": transaction.label,
                                 "source_id": firefly_account_id if transaction.montantOp < 0 else None,
