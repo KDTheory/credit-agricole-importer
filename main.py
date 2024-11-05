@@ -8,6 +8,9 @@ from creditagricole import CreditAgricoleClient
 import firefly_iii_client
 import urllib3
 import requests
+import datetime
+from datetime import datetime, timedelta
+
 
 # Constants
 CONFIG_FILE = '/app/config.ini'
@@ -82,6 +85,9 @@ def get_or_create_firefly_account(firefly_client, ca_account):
                 logger.info(f"Compte Firefly existant trouvé pour {mask_sensitive_info(ca_account.numeroCompte)}")
                 return account['id']
 
+        # Afficher le contenu du compte pour débogage
+        logger.debug(f"Contenu de ca_account.account pour le compte {ca_account.numeroCompte} : {ca_account.account}")
+
         # Récupération du solde avec gestion des erreurs
         solde = ca_account.account.get('solde') or ca_account.account.get('valorisationContrat') or '0.00'
 
@@ -114,7 +120,6 @@ def get_or_create_firefly_account(firefly_client, ca_account):
     except Exception as e:
         logger.error(f"Erreur inconnue lors de la création/récupération du compte Firefly : {str(e)}")
         return None
-
 
 def main():
     try:
