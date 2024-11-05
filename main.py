@@ -172,7 +172,7 @@ def main():
                         libelle = transaction.libelleOperation
 
                         if isinstance(date_operation, str):
-                        date_operation = datetime.strptime(date_operation, "%Y-%m-%d")
+                            date_operation = datetime.strptime(date_operation, "%Y-%m-%d")
 
                         transaction_type = "withdrawal" if montant < 0 else "deposit"
                         
