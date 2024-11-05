@@ -182,14 +182,14 @@ def main():
                         
                         transaction_data = {
                             "transactions": [{
-                                "type": "withdrawal" if transaction.amount < 0 else "deposit",
-                                "date": transaction.date.strftime("%Y-%m-%d"),
-                                "amount": str(abs(transaction.amount)),
+                                "type": "withdrawal" if transaction.montantOp < 0 else "deposit",
+                                "date": transaction.dateOp.strftime("%Y-%m-%d"),
+                                "amount": str(abs(transaction.montantOp)),
                                 "description": transaction.label,
-                                "source_id": firefly_account_id if transaction.amount < 0 else None,
-                                "destination_id": firefly_account_id if transaction.amount >= 0 else None,
-                                "source_name": "External Account" if transaction.amount >= 0 else None,
-                                "destination_name": "External Account" if transaction.amount < 0 else None
+                                "source_id": firefly_account_id if transaction.montantOp < 0 else None,
+                                "destination_id": firefly_account_id if transaction.montantOp >= 0 else None,
+                                "source_name": "External Account" if transaction.montantOp >= 0 else None,
+                                "destination_name": "External Account" if transaction.montantOp < 0 else None
                             }]
                         }
                         firefly_client.create_transaction(transaction_data)
