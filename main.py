@@ -75,26 +75,36 @@ class FireflyIIIClient:
 
 def get_or_create_firefly_account(firefly_client, ca_account):
     try:
+        # Vérification de l'existence du compte dans Firefly
         firefly_accounts = firefly_client.get_accounts()
         for account in firefly_accounts:
-            if account['attributes']['account_number'] == ca_account.numeroCompte:
+            if account['attributes'].get('account_number') == ca_account.numeroCompte:
                 logger.info(f"Compte Firefly existant trouvé pour {mask_sensitive_info(ca_account.numeroCompte)}")
                 return account['id']
 
-        # Si le compte n'existe pas, on le crée
+        # Récupération du solde avec gestion des erreurs
+        solde = ca_account.account.get('solde') or ca_account.account.get('valorisationContrat') or '0.00'
         new_account_data = {
-            "name": ca_account.account['libelleProduit'],
+            "name": ca_account.account.get('libelleProduit', 'Compte sans nom'),
             "type": "asset",
             "account_number": ca_account.numeroCompte,
-            "opening_balance": str(ca_account.account.get('solde', ca_account.account.get('valorisationContrat', '0.00'))),
+            "opening_balance": str(solde),
             "currency_code": "EUR"
         }
+
+        # Logging pour vérifier les données envoyées
         logger.debug(f"Données envoyées à Firefly III pour la création du compte : {mask_sensitive_info(str(new_account_data))}")
+
+        # Création du compte dans Firefly
         new_account = firefly_client.create_account(new_account_data)
         logger.info(f"Nouveau compte Firefly créé pour {mask_sensitive_info(ca_account.numeroCompte)}")
         return new_account['id']
+    except requests.HTTPError as e:
+        # Affichage du message complet d'erreur HTTP
+        logger.error(f"Erreur lors de la création/récupération du compte Firefly : {e.response.status_code} {e.response.text}")
+        return None
     except Exception as e:
-        logger.error(f"Erreur lors de la création/récupération du compte Firefly : {str(e)}")
+        logger.error(f"Erreur inconnue lors de la création/récupération du compte Firefly : {str(e)}")
         return None
 
 def main():
