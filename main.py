@@ -86,9 +86,10 @@ def get_or_create_firefly_account(firefly_client, ca_account):
             "name": ca_account.account['libelleProduit'],
             "type": "asset",
             "account_number": ca_account.numeroCompte,
-            "opening_balance": str(ca_account.account['solde']),
+            "opening_balance": str(ca_account.account.get('solde', ca_account.account.get('valorisationContrat', '0.00'))),
             "currency_code": "EUR"
         }
+        logger.debug(f"Données envoyées à Firefly III pour la création du compte : {mask_sensitive_info(str(new_account_data))}")
         new_account = firefly_client.create_account(new_account_data)
         logger.info(f"Nouveau compte Firefly créé pour {mask_sensitive_info(ca_account.numeroCompte)}")
         return new_account['id']
