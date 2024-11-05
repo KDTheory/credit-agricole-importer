@@ -90,7 +90,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         logger.debug(f"Contenu de ca_account.account pour le compte {ca_account.numeroCompte} : {ca_account.account}")
 
         # Récupération du solde avec gestion des erreurs
-        solde = ca_account.account.get('solde') or ca_account.account.get('valorisationContrat') or '0.00'
+        solde = ca_account.account.get('solde') or ca_account.account.get('valorisation') or ca_account.account.get('balance') or '0.00'
 
         # Vérification du type de compte
         account_type = "asset"
