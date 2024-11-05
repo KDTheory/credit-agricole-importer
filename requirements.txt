@@ -3,3 +3,4 @@ requests==2.31.0
 urllib3>=1.25.3,<2.1.0
 creditagricole-particuliers
 Firefly-III-API-Client==2.0.12.0
+python-dateutil==2.8.2
