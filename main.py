@@ -167,12 +167,16 @@ def main():
                         logger.debug(f"Transaction object: {transaction}")
                         logger.debug(f"Transaction attributes: {pprint.pformat(transaction.__dict__)}")
 
-                        montant = transaction.montant
-                        date_operation = transaction.dateOperation
-                        libelle = transaction.libelleOperation
+                        montant = transaction.montantOp
+                        date_operation = transaction.dateOp
+                        libelle = transaction.libelleOp
 
                         if isinstance(date_operation, str):
-                            date_operation = datetime.strptime(date_operation, "%Y-%m-%d")
+                            try:
+                                date_operation = datetime.strptime(date_operation, "%b %d, %Y, %I:%M:%S %p")
+                            except ValueError:
+                                logger.error(f"Erreur lors de la conversion de la date: {date_operation}")
+                                continue
 
                         transaction_type = "withdrawal" if montant < 0 else "deposit"
                         
