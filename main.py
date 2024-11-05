@@ -84,11 +84,19 @@ def get_or_create_firefly_account(firefly_client, ca_account):
 
         # Récupération du solde avec gestion des erreurs
         solde = ca_account.account.get('solde') or ca_account.account.get('valorisationContrat') or '0.00'
+
+        # Vérification du type de compte
+        account_type = "asset"
+        account_role = "defaultAsset"  # Vous pouvez ajuster en fonction du type réel du compte
+
+        # Préparation des données pour la création du compte
         new_account_data = {
             "name": ca_account.account.get('libelleProduit', 'Compte sans nom'),
-            "type": "asset",
+            "type": account_type,
             "account_number": ca_account.numeroCompte,
             "opening_balance": str(solde),
+            "opening_balance_date": datetime.now().strftime('%Y-%m-%d'),
+            "account_role": account_role,
             "currency_code": "EUR"
         }
 
@@ -106,6 +114,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
     except Exception as e:
         logger.error(f"Erreur inconnue lors de la création/récupération du compte Firefly : {str(e)}")
         return None
+
 
 def main():
     try:
