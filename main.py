@@ -179,9 +179,9 @@ def main():
                 
                 logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde: {mask_sensitive_info(str(account.account['solde']))} {account.account['libelleDevise']}")
 
-                logger.debug(f"Type de account.account : {type(account.account)}")
-                logger.debug(f"Attributs de account.account : {dir(account.account)}")
-                logger.debug(f"Valeurs de account.account : {pprint.pformat(account.account))}")
+                logger.debug(f"Type de ca_account.account : {type(ca_account.account)}")
+                logger.debug(f"Attributs de ca_account.account : {ca_account.account.keys()}")
+                logger.debug(f"Valeurs de ca_account.account : {pprint.pformat(ca_account.account)}")
                 
                 firefly_account_id = get_or_create_firefly_account(firefly_client, account)
                 if not firefly_account_id:
