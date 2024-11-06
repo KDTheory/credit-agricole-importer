@@ -150,8 +150,8 @@ def main():
 
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
             existing_set = {
-                (tx['attributes']['date'], tx['attributes']['amount'], tx['attributes']['description'])
-                for tx in existing_transactions
+                (tx['attributes'].get('date'), tx['attributes'].get('amount'), tx['attributes'].get('description'))
+                for tx in existing_transactions if 'date' in tx['attributes'] and 'amount' in tx['attributes'] and 'description' in tx['attributes']
             }
 
             transactions = ca_cli.get_transactions(account)
