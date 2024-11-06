@@ -18,7 +18,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def mask_sensitive_info(text):
-    # Masquer les numéros de compte et les soldes
     masked_text = ' '.join(['XXXXXXXX' + s[-4:] if s.isdigit() and len(s) > 8 else 'XXX.XX' if '.' in s and s.replace('.', '', 1).isdigit() else s for s in text.split()])
     return masked_text
 
@@ -63,7 +62,6 @@ class FireflyIIIClient:
         return response.json()['data']
 
     def get_transactions(self, account_id):
-        """Récupère toutes les transactions existantes pour un compte Firefly."""
         transactions = []
         page = 1
         while True:
@@ -75,10 +73,7 @@ class FireflyIIIClient:
             data = response.json()
             transactions.extend(data['data'])
             
-            # Gestion de la pagination dans les métadonnées avec sécurité
-            if not data.get('meta') or not data['meta'].get('pagination'):
-                break  # Arrête si les informations de pagination sont manquantes
-            if not data['meta']['pagination'].get('has_more_pages'):
+            if not data.get('meta') or not data['meta'].get('pagination') or not data['meta']['pagination'].get('has_more_pages'):
                 break
             
             page += 1
