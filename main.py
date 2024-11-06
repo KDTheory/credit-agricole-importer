@@ -86,7 +86,10 @@ def get_or_create_firefly_account(firefly_client, ca_account):
             if account['attributes'].get('account_number') == ca_account.numeroCompte:
                 logger.info(f"Compte Firefly existant trouvé pour {mask_sensitive_info(ca_account.numeroCompte)}")
                 return account['id']
-
+                
+        if not isinstance(ca_account.account, dict):
+            logger.warning(f"Les informations du compte {mask_sensitive_info(ca_account.numeroCompte)} ne sont pas disponibles.")
+            return None
         # Afficher le contenu du compte pour débogage
         logger.debug(f"Contenu de ca_account.account pour le compte {ca_account.numeroCompte} : {ca_account.account}")
         logger.debug(f"Type de ca_account.account : {type(ca_account.account)}")
@@ -94,9 +97,9 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         logger.debug(f"Valeurs de ca_account.account : {pprint.pformat(vars(ca_account.account))}")
 
         # Récupération du solde avec gestion des erreurs
-        solde = getattr(ca_account.account, 'solde', None) or \
-                getattr(ca_account.account, 'valorisation', None) or \
-                getattr(ca_account.account, 'balance', None) or \
+        solde = ca_account.account.get('solde') or \
+                ca_account.account.get('valorisation') or \
+                ca_account.account.get('balance') or \
                 '0.00'
 
         if solde == '0.00' or solde is None:
@@ -109,7 +112,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
 
         # Préparation des données pour la création du compte
         new_account_data = {
-            "name": getattr(ca_account.account, 'libelleProduit', 'Compte sans nom'),
+            "name": ca_account.account.get('libelleProduit', 'Compte sans nom'),
             "type": account_type,
             "account_number": ca_account.numeroCompte,
             "opening_balance": str(solde),
