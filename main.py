@@ -162,9 +162,14 @@ def main():
         
         for account in accounts:
             try:
-                solde = getattr(account.account, 'solde', None) or \
-                        getattr(account.account, 'valorisation', None) or \
-                        getattr(account.account, 'balance', None) or \
+                if not account.account:
+                    logger.warning(f"Le compte {mask_sensitive_info(account.numeroCompte)} n'a pas d'informations de compte disponibles. Il sera ignoré.")
+                    continue
+
+                # Récupération du solde avec gestion des erreurs
+                solde = account.account.get('solde') or \
+                        account.account.get('valorisation') or \
+                        account.account.get('balance') or \
                         '0.00'
 
                 libelle_devise = getattr(account.account, 'libelleDevise', 'Devise inconnue')
@@ -173,7 +178,7 @@ def main():
 
                 logger.debug(f"Type de account.account : {type(account.account)}")
                 logger.debug(f"Attributs de account.account : {dir(account.account)}")
-                logger.debug(f"Valeurs de account.account : {pprint.pformat(vars(account.account))}")
+                logger.debug(f"Valeurs de account.account : {pprint.pformat(account.account))}")
                 
                 firefly_account_id = get_or_create_firefly_account(firefly_client, account)
                 if not firefly_account_id:
