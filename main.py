@@ -5,7 +5,6 @@ import configparser
 import logging
 import sys
 from creditagricole import CreditAgricoleClient
-import firefly_iii_client
 import urllib3
 import requests
 from datetime import datetime
@@ -19,7 +18,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def mask_sensitive_info(text):
-    # Masquer les numéros de compte et les soldes
     masked_text = ' '.join(['XXXXXXXX' + s[-4:] if s.isdigit() and len(s) > 8 else 'XXX.XX' if '.' in s and s.replace('.', '', 1).isdigit() else s for s in text.split()])
     return masked_text
 
@@ -60,6 +58,11 @@ class FireflyIIIClient:
 
     def get_accounts(self):
         response = self.session.get(f"{self.base_url}/api/v1/accounts")
+        response.raise_for_status()
+        return response.json()['data']
+
+    def get_transactions(self, account_id):
+        response = self.session.get(f"{self.base_url}/api/v1/transactions", params={"account_id": account_id})
         response.raise_for_status()
         return response.json()['data']
 
@@ -145,6 +148,12 @@ def main():
                 logger.error(f"Impossible de traiter le compte {mask_sensitive_info(account.numeroCompte)}: échec de création/récupération dans Firefly")
                 continue
 
+            existing_transactions = firefly_client.get_transactions(firefly_account_id)
+            existing_set = {
+                (tx['attributes']['date'], tx['attributes']['amount'], tx['attributes']['description'])
+                for tx in existing_transactions
+            }
+
             transactions = ca_cli.get_transactions(account)
             imported_count = 0
             for transaction in transactions:
@@ -153,13 +162,18 @@ def main():
                     date_operation = parser.parse(transaction.dateOp) if isinstance(transaction.dateOp, str) else transaction.dateOp
                     libelle = transaction.libelleOp
             
+                    transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
+                    if transaction_key in existing_set:
+                        logger.info(f"Transaction en doublon détectée et ignorée : {mask_sensitive_info(str(transaction_key))}")
+                        continue
+
                     transaction_type = "withdrawal" if montant < 0 else "deposit"
                     
                     transaction_data = {
                         "transactions": [{
                             "type": transaction_type,
                             "date": date_operation.strftime("%Y-%m-%d"),
-                            "amount": str(abs(montant)),  # Gardez le montant sans masquer ici
+                            "amount": str(abs(montant)),
                             "description": libelle,
                             "source_id": firefly_account_id if montant < 0 else None,
                             "destination_id": firefly_account_id if montant >= 0 else None,
@@ -169,7 +183,6 @@ def main():
                     firefly_client.create_transaction(transaction_data)
                     imported_count += 1
                 except requests.HTTPError as e:
-                    # Log de l'erreur avec détail du message retourné par le serveur
                     logger.error(f"Erreur lors de l'importation de la transaction: {e.response.status_code} {e.response.reason} - Détails: {e.response.text}")
                 except requests.RequestException as e:
                     logger.error(f"Erreur lors de l'importation de la transaction: {str(e)}")
