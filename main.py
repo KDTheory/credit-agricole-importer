@@ -109,7 +109,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
 
         # Préparation des données pour la création du compte
         new_account_data = {
-            "name": getattr(ca_account.account, 'libelleProduit', 'Compte sans nom',
+            "name": getattr(ca_account.account, 'libelleProduit', 'Compte sans nom'),
             "type": account_type,
             "account_number": ca_account.numeroCompte,
             "opening_balance": str(solde),
