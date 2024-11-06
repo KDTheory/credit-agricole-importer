@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def mask_sensitive_info(text):
+    # Masquer les numéros de compte et les soldes
     masked_text = ' '.join(['XXXXXXXX' + s[-4:] if s.isdigit() and len(s) > 8 else 'XXX.XX' if '.' in s and s.replace('.', '', 1).isdigit() else s for s in text.split()])
     return masked_text
 
@@ -87,7 +88,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         solde = ca_account.account.get('solde') or ca_account.account.get('valorisation') or ca_account.account.get('balance') or '0.00'
 
         if solde == '0.00' or solde is None:
-            logger.warning(f"Le compte {ca_account.numeroCompte} n'a pas de solde disponible. Il sera ignoré.")
+            logger.warning(f"Le compte {mask_sensitive_info(ca_account.numeroCompte)} n'a pas de solde disponible. Il sera ignoré.")
             return None
 
         new_account_data = {
@@ -151,7 +152,7 @@ def main():
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
             existing_set = {
                 (tx['attributes'].get('date'), tx['attributes'].get('amount'), tx['attributes'].get('description'))
-                for tx in existing_transactions if 'date' in tx['attributes'] and 'amount' in tx['attributes'] and 'description' in tx['attributes']
+                for tx in existing_transactions if all(k in tx['attributes'] for k in ('date', 'amount', 'description'))
             }
 
             transactions = ca_cli.get_transactions(account)
