@@ -190,7 +190,7 @@ def main():
                                 "type": "withdrawal" if transaction.montantOp < 0 else "deposit",
                                 "date": date_operation.strftime("%Y-%m-%d"),
                                 "amount": str(abs(transaction.montantOp)),
-                                "description": transaction.label,
+                                "description": transaction.libelleOp,
                                 "source_id": firefly_account_id if transaction.montantOp < 0 else None,
                                 "destination_id": firefly_account_id if transaction.montantOp >= 0 else None,
                                 "source_name": "External Account" if transaction.montantOp >= 0 else None,
