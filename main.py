@@ -157,15 +157,22 @@ def main():
                 logger.error(f"Impossible de traiter le compte {mask_sensitive_info(account.numeroCompte)}: échec de création/récupération dans Firefly")
                 continue
 
-            transactions = ca_cli.get_transactions(account)
+            # Collecte des transactions existantes dans Firefly
+            logger.info("Récupération des transactions existantes dans Firefly")
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
             
+            # Création de l'ensemble des transactions existantes pour la comparaison
             existing_set = {
-                (tx['attributes'].get('date'), tx['attributes'].get('amount'), tx['attributes'].get('description'))
-                for tx in existing_transactions
-                if all(k in tx['attributes'] for k in ('date', 'amount', 'description'))
+                (
+                    tx['attributes'].get('date'), 
+                    tx['attributes'].get('amount'), 
+                    tx['attributes'].get('description')
+                )
+                for tx in existing_transactions if all(k in tx['attributes'] for k in ('date', 'amount', 'description'))
             }
-
+            logger.info(f"{len(existing_set)} transactions existantes chargées pour comparaison des doublons.")
+            
+            transactions = ca_cli.get_transactions(account)
             imported_count = 0
             for transaction in transactions:
                 try:
@@ -174,6 +181,7 @@ def main():
                     libelle = transaction.libelleOp
                     transaction_type = "withdrawal" if montant < 0 else "deposit"
                     
+                    # Clé unique pour la comparaison de transactions
                     transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
                     if transaction_key in existing_set:
                         logger.info(f"Doublon détecté pour la transaction : {transaction_key}. Ignorée.")
