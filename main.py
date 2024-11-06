@@ -79,10 +79,14 @@ class FireflyIIIClient:
             response = self.session.get(f"{self.base_url}/api/v1/accounts/{account_id}/transactions?page={page}")
             response.raise_for_status()
             data = response.json()
+            if 'data' not in data:
+                logger.warning(f"Aucune donnée de transaction retournée pour le compte Firefly ID: {account_id}")
+                break
             transactions.extend(data['data'])
-            if not data['meta']['pagination'].get('has_more_pages'):
+            if not data['meta']['pagination'].get('has_more_pages', False):
                 break
             page += 1
+        logger.info(f"{len(transactions)} transactions récupérées pour le compte Firefly ID {account_id}")
         return transactions
 
 def get_or_create_firefly_account(firefly_client, ca_account):
@@ -168,7 +172,7 @@ def main():
                     tx['attributes'].get('amount'), 
                     tx['attributes'].get('description')
                 )
-                for tx in existing_transactions if all(k in tx['attributes'] for k in ('date', 'amount', 'description'))
+                for tx in existing_transactions if 'date' in tx['attributes'] and 'amount' in tx['attributes'] and 'description' in tx['attributes']
             }
             logger.info(f"{len(existing_set)} transactions existantes chargées pour comparaison des doublons.")
             
@@ -181,7 +185,6 @@ def main():
                     libelle = transaction.libelleOp
                     transaction_type = "withdrawal" if montant < 0 else "deposit"
                     
-                    # Clé unique pour la comparaison de transactions
                     transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
                     if transaction_key in existing_set:
                         logger.info(f"Doublon détecté pour la transaction : {transaction_key}. Ignorée.")
@@ -200,8 +203,6 @@ def main():
                     
                     firefly_client.create_transaction(transaction_data)
                     imported_count += 1
-                except requests.HTTPError as e:
-                    logger.error(f"Erreur lors de l'importation de la transaction: {e.response.status_code} {e.response.reason} - Détails: {e.response.text}")
                 except requests.RequestException as e:
                     logger.error(f"Erreur lors de l'importation de la transaction: {str(e)}")
 
