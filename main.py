@@ -5,6 +5,7 @@ import configparser
 import logging
 import sys
 from creditagricole import CreditAgricoleClient
+import firefly_iii_client
 import urllib3
 import requests
 from datetime import datetime
@@ -61,24 +62,6 @@ class FireflyIIIClient:
         response.raise_for_status()
         return response.json()['data']
 
-    def get_transactions(self, account_id):
-        transactions = []
-        page = 1
-        while True:
-            response = self.session.get(
-                f"{self.base_url}/api/v1/transactions", 
-                params={"account_id": account_id, "page": page}
-            )
-            response.raise_for_status()
-            data = response.json()
-            transactions.extend(data['data'])
-            
-            if not data.get('meta') or not data['meta'].get('pagination') or not data['meta']['pagination'].get('has_more_pages'):
-                break
-            
-            page += 1
-        return transactions
-
     def create_account(self, account_data):
         response = self.session.post(f"{self.base_url}/api/v1/accounts", json=account_data)
         response.raise_for_status()
@@ -88,6 +71,19 @@ class FireflyIIIClient:
         response = self.session.post(f"{self.base_url}/api/v1/transactions", json=transaction_data)
         response.raise_for_status()
         return response.json()['data']
+
+    def get_transactions(self, account_id):
+        transactions = []
+        page = 1
+        while True:
+            response = self.session.get(f"{self.base_url}/api/v1/accounts/{account_id}/transactions?page={page}")
+            response.raise_for_status()
+            data = response.json()
+            transactions.extend(data['data'])
+            if not data['meta']['pagination'].get('has_more_pages'):
+                break
+            page += 1
+        return transactions
 
 def get_or_create_firefly_account(firefly_client, ca_account):
     try:
@@ -161,32 +157,22 @@ def main():
                 logger.error(f"Impossible de traiter le compte {mask_sensitive_info(account.numeroCompte)}: échec de création/récupération dans Firefly")
                 continue
 
-            # Récupération des transactions existantes dans Firefly pour vérifier les doublons
-            existing_transactions = firefly_client.get_transactions(firefly_account_id)
-            existing_set = {
-                (
-                    tx['attributes']['date'],
-                    tx['attributes']['amount'],
-                    tx['attributes']['description'].strip()
-                )
-                for tx in existing_transactions
-                if 'date' in tx['attributes'] and 'amount' in tx['attributes'] and 'description' in tx['attributes']
-            }
-
             transactions = ca_cli.get_transactions(account)
+            existing_transactions = firefly_client.get_transactions(firefly_account_id)
+            existing_set = {(tx['attributes']['date'], tx['attributes']['amount'], tx['attributes']['description']) for tx in existing_transactions}
+
             imported_count = 0
             for transaction in transactions:
                 try:
                     montant = transaction.montantOp
                     date_operation = parser.parse(transaction.dateOp) if isinstance(transaction.dateOp, str) else transaction.dateOp
-                    libelle = transaction.libelleOp.strip()
-
+                    libelle = transaction.libelleOp
+                    transaction_type = "withdrawal" if montant < 0 else "deposit"
+                    
                     transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
                     if transaction_key in existing_set:
-                        logger.info(f"Transaction en doublon détectée et ignorée : {mask_sensitive_info(str(transaction_key))}")
+                        logger.info(f"Doublon détecté pour la transaction : {transaction_key}. Ignorée.")
                         continue
-
-                    transaction_type = "withdrawal" if montant < 0 else "deposit"
                     
                     transaction_data = {
                         "transactions": [{
