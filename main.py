@@ -63,9 +63,21 @@ class FireflyIIIClient:
         return response.json()['data']
 
     def get_transactions(self, account_id):
-        response = self.session.get(f"{self.base_url}/api/v1/transactions", params={"account_id": account_id})
-        response.raise_for_status()
-        return response.json()['data']
+        """Récupère toutes les transactions existantes pour un compte Firefly."""
+        transactions = []
+        page = 1
+        while True:
+            response = self.session.get(
+                f"{self.base_url}/api/v1/transactions", 
+                params={"account_id": account_id, "page": page}
+            )
+            response.raise_for_status()
+            data = response.json()
+            transactions.extend(data['data'])
+            if not data['meta']['pagination']['has_more_pages']:
+                break
+            page += 1
+        return transactions
 
     def create_account(self, account_data):
         response = self.session.post(f"{self.base_url}/api/v1/accounts", json=account_data)
@@ -149,10 +161,16 @@ def main():
                 logger.error(f"Impossible de traiter le compte {mask_sensitive_info(account.numeroCompte)}: échec de création/récupération dans Firefly")
                 continue
 
+            # Récupération des transactions existantes dans Firefly pour vérifier les doublons
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
             existing_set = {
-                (tx['attributes'].get('date'), tx['attributes'].get('amount'), tx['attributes'].get('description'))
-                for tx in existing_transactions if all(k in tx['attributes'] for k in ('date', 'amount', 'description'))
+                (
+                    tx['attributes'].get('date', ''),
+                    tx['attributes'].get('amount', ''),
+                    tx['attributes'].get('description', '').strip()
+                )
+                for tx in existing_transactions
+                if all(k in tx['attributes'] for k in ('date', 'amount', 'description'))
             }
 
             transactions = ca_cli.get_transactions(account)
@@ -161,8 +179,8 @@ def main():
                 try:
                     montant = transaction.montantOp
                     date_operation = parser.parse(transaction.dateOp) if isinstance(transaction.dateOp, str) else transaction.dateOp
-                    libelle = transaction.libelleOp
-            
+                    libelle = transaction.libelleOp.strip()
+
                     transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
                     if transaction_key in existing_set:
                         logger.info(f"Transaction en doublon détectée et ignorée : {mask_sensitive_info(str(transaction_key))}")
