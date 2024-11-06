@@ -19,7 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def mask_sensitive_info(text):
-    return ' '.join(['XXXXXXXX' + s[-4:] if s.isdigit() and len(s) > 8 else s for s in text.split()])
+    # Masquer les numéros de compte et les soldes
+    masked_text = ' '.join(['XXXXXXXX' + s[-4:] if s.isdigit() and len(s) > 8 else 'XXX.XX' if '.' in s and s.replace('.', '', 1).isdigit() else s for s in text.split()])
+    return masked_text
 
 def load_config():
     config = configparser.ConfigParser()
@@ -96,7 +98,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         }
 
         new_account = firefly_client.create_account(new_account_data)
-        logger.info(f"Nouveau compte Firefly créé pour {mask_sensitive_info(ca_account.numeroCompte)}")
+        logger.info(f"Nouveau compte Firefly créé pour {mask_sensitive_info(ca_account.numeroCompte)} avec solde masqué {mask_sensitive_info(str(solde))}")
         return new_account['id']
     except requests.HTTPError as e:
         logger.error(f"Erreur lors de la création/récupération du compte Firefly : {e.response.status_code} {e.response.text}")
@@ -136,7 +138,7 @@ def main():
             solde = account.account.get('solde') or account.account.get('valorisation') or account.account.get('balance') or '0.00'
             libelle_devise = account.account.get('libelleDevise', 'Devise inconnue')
 
-            logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde: {solde} {libelle_devise}")
+            logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde masqué: {mask_sensitive_info(str(solde))} {libelle_devise}")
             
             firefly_account_id = get_or_create_firefly_account(firefly_client, account)
             if not firefly_account_id:
@@ -157,7 +159,7 @@ def main():
                         "transactions": [{
                             "type": transaction_type,
                             "date": date_operation.strftime("%Y-%m-%d"),
-                            "amount": str(abs(montant)),
+                            "amount": mask_sensitive_info(str(abs(montant))),
                             "description": libelle,
                             "source_id": firefly_account_id if montant < 0 else None,
                             "destination_id": firefly_account_id if montant >= 0 else None,
