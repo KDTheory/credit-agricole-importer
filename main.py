@@ -166,14 +166,18 @@ def main():
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
             
             # Création de l'ensemble des transactions existantes pour la comparaison
-            existing_set = {
-                (
-                    tx['attributes'].get('date'), 
-                    tx['attributes'].get('amount'), 
-                    tx['attributes'].get('description')
-                )
-                for tx in existing_transactions if 'date' in tx['attributes'] and 'amount' in tx['attributes'] and 'description' in tx['attributes']
-            }
+            existing_set = set()
+            for tx in existing_transactions:
+                date = tx['attributes'].get('date')
+                amount = tx['attributes'].get('amount')
+                description = tx['attributes'].get('description')
+                if date and amount and description:
+                    transaction_tuple = (date, amount, description)
+                    existing_set.add(transaction_tuple)
+                    logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
+                else:
+                    logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {tx}")
+
             logger.info(f"{len(existing_set)} transactions existantes chargées pour comparaison des doublons.")
             
             transactions = ca_cli.get_transactions(account)
