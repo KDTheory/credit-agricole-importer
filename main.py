@@ -74,8 +74,13 @@ class FireflyIIIClient:
             response.raise_for_status()
             data = response.json()
             transactions.extend(data['data'])
-            if not data['meta']['pagination']['has_more_pages']:
+            
+            # Gestion de la pagination dans les métadonnées avec sécurité
+            if not data.get('meta') or not data['meta'].get('pagination'):
+                break  # Arrête si les informations de pagination sont manquantes
+            if not data['meta']['pagination'].get('has_more_pages'):
                 break
+            
             page += 1
         return transactions
 
