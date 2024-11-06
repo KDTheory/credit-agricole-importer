@@ -89,6 +89,9 @@ def get_or_create_firefly_account(firefly_client, ca_account):
 
         # Afficher le contenu du compte pour débogage
         logger.debug(f"Contenu de ca_account.account pour le compte {ca_account.numeroCompte} : {ca_account.account}")
+        logger.debug(f"Type de ca_account.account : {type(ca_account.account)}")
+        logger.debug(f"Attributs de ca_account.account : {dir(ca_account.account)}")
+        logger.debug(f"Valeurs de ca_account.account : {pprint.pformat(vars(ca_account.account))}")
 
         # Récupération du solde avec gestion des erreurs
         solde = getattr(ca_account.account, 'solde', None) or \
@@ -106,7 +109,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
 
         # Préparation des données pour la création du compte
         new_account_data = {
-            "name": ca_account.account.get('libelleProduit', 'Compte sans nom'),
+            "name": getattr(ca_account.account, 'libelleProduit', 'Compte sans nom',
             "type": account_type,
             "account_number": ca_account.numeroCompte,
             "opening_balance": str(solde),
@@ -128,6 +131,7 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         return None
     except Exception as e:
         logger.error(f"Erreur inconnue lors de la création/récupération du compte Firefly : {str(e)}")
+        logger.debug(traceback.format_exc())
         return None
 
 def main():
