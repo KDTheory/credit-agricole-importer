@@ -152,24 +152,28 @@ def main():
                     montant = transaction.montantOp
                     date_operation = parser.parse(transaction.dateOp) if isinstance(transaction.dateOp, str) else transaction.dateOp
                     libelle = transaction.libelleOp
-
+            
                     transaction_type = "withdrawal" if montant < 0 else "deposit"
                     
                     transaction_data = {
                         "transactions": [{
                             "type": transaction_type,
                             "date": date_operation.strftime("%Y-%m-%d"),
-                            "amount": mask_sensitive_info(str(abs(montant))),
+                            "amount": str(abs(montant)),  # Gardez le montant sans masquer ici
                             "description": libelle,
                             "source_id": firefly_account_id if montant < 0 else None,
                             "destination_id": firefly_account_id if montant >= 0 else None,
                         }]
                     }
+                    
                     firefly_client.create_transaction(transaction_data)
                     imported_count += 1
+                except requests.HTTPError as e:
+                    # Log de l'erreur avec détail du message retourné par le serveur
+                    logger.error(f"Erreur lors de l'importation de la transaction: {e.response.status_code} {e.response.reason} - Détails: {e.response.text}")
                 except requests.RequestException as e:
                     logger.error(f"Erreur lors de l'importation de la transaction: {str(e)}")
-            
+
             logger.info(f"Transactions importées pour le compte {mask_sensitive_info(account.numeroCompte)}: {imported_count}/{len(transactions)}")
     
         logger.info("Importation terminée avec succès")
