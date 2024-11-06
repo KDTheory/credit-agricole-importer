@@ -93,8 +93,8 @@ def get_or_create_firefly_account(firefly_client, ca_account):
         # Afficher le contenu du compte pour débogage
         logger.debug(f"Contenu de ca_account.account pour le compte {ca_account.numeroCompte} : {ca_account.account}")
         logger.debug(f"Type de ca_account.account : {type(ca_account.account)}")
-        logger.debug(f"Attributs de ca_account.account : {dir(ca_account.account)}")
-        logger.debug(f"Valeurs de ca_account.account : {pprint.pformat(vars(ca_account.account))}")
+        logger.debug(f"Attributs de ca_account.account : {ca_account.account.keys()}")
+        logger.debug(f"Valeurs de ca_account.account : {pprint.pformat(ca_account.account)}")
 
         # Récupération du solde avec gestion des erreurs
         solde = ca_account.account.get('solde') or \
@@ -175,13 +175,15 @@ def main():
                         account.account.get('balance') or \
                         '0.00'
 
-                libelle_devise = getattr(account.account, 'libelleDevise', 'Devise inconnue')
-                
-                logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde: {mask_sensitive_info(str(account.account['solde']))} {account.account['libelleDevise']}")
+                # Récupération de la devise avec gestion des erreurs
+                libelle_devise = account.account.get('libelleDevise', 'Devise inconnue')
 
-                logger.debug(f"Type de ca_account.account : {type(ca_account.account)}")
-                logger.debug(f"Attributs de ca_account.account : {ca_account.account.keys()}")
-                logger.debug(f"Valeurs de ca_account.account : {pprint.pformat(ca_account.account)}")
+                logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde: {mask_sensitive_info(str(solde))} {libelle_devise}")
+
+                # Ajoutez du logging pour déboguer
+                logger.debug(f"Type de account.account : {type(account.account)}")
+                logger.debug(f"Attributs de account.account : {account.account.keys()}")
+                logger.debug(f"Valeurs de account.account : {pprint.pformat(account.account)}")
                 
                 firefly_account_id = get_or_create_firefly_account(firefly_client, account)
                 if not firefly_account_id:
@@ -213,14 +215,14 @@ def main():
                         
                         transaction_data = {
                             "transactions": [{
-                                "type": "withdrawal" if transaction.montantOp < 0 else "deposit",
+                                "type": transaction_type,
                                 "date": date_operation.strftime("%Y-%m-%d"),
-                                "amount": str(abs(transaction.montantOp)),
-                                "description": transaction.libelleOp,
-                                "source_id": firefly_account_id if transaction.montantOp < 0 else None,
-                                "destination_id": firefly_account_id if transaction.montantOp >= 0 else None,
-                                "source_name": "External Account" if transaction.montantOp >= 0 else None,
-                                "destination_name": "External Account" if transaction.montantOp < 0 else None
+                                "amount": str(abs(montant)),
+                                "description": libelle,
+                                "source_id": firefly_account_id if montant < 0 else None,
+                                "destination_id": firefly_account_id if montant >= 0 else None,
+                                "source_name": "External Account" if montant >= 0 else None,
+                                "destination_name": "External Account" if montant < 0 else None
                             }]
                         }
                         firefly_client.create_transaction(transaction_data)
@@ -232,6 +234,7 @@ def main():
             
             except Exception as e:
                 logger.error(f"Erreur lors du traitement du compte {mask_sensitive_info(account.numeroCompte)}: {str(e)}")
+                logger.debug(traceback.format_exc())
         
         logger.info("Importation terminée avec succès")
     
