@@ -183,15 +183,19 @@ def main():
             existing_set = set()
             
             for tx in existing_transactions:
-                date = tx['attributes'].get('date')
-                amount = tx['attributes'].get('amount')
-                description = tx['attributes'].get('description')
-                
+                # Récupérer les attributs nécessaires
+                attributes = tx.get('attributes', {})
+                date = attributes.get('date')
+                amount = attributes.get('amount')
+                description = attributes.get('description')
+
+                # Vérifier si tous les champs nécessaires sont présents
                 if date and amount and description:
                     transaction_tuple = (date, amount, description)
                     existing_set.add(transaction_tuple)
                     logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
                 else:
+                    # Enregistrer un message d'avertissement avec plus de détails sur la transaction incomplète
                     logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {tx}")
             
             logger.info(f"{len(existing_set)} transactions existantes chargées pour comparaison des doublons.")
