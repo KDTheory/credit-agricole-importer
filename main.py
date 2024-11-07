@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import configparser
 import logging
 import sys
@@ -32,12 +31,9 @@ def init_firefly_client(config):
         firefly_section = config['FireflyIII']
         url = firefly_section.get('url')
         personal_access_token = firefly_section.get('personal_access_token')
-
         if not url or not personal_access_token:
             raise ValueError("URL ou token d'accès personnel manquant dans la configuration FireflyIII.")
-
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
         session = requests.Session()
         session.headers.update({
             'Authorization': f"Bearer {personal_access_token}",
@@ -45,7 +41,6 @@ def init_firefly_client(config):
             'Accept': 'application/json'
         })
         session.verify = False
-
         logger.info(f"Client Firefly III initialisé - URL: {mask_sensitive_info(url)}")
         return FireflyIIIClient(url, session)
     except Exception as e:
@@ -96,13 +91,13 @@ def get_or_create_firefly_account(firefly_client, ca_account):
             if account['attributes'].get('account_number') == ca_account.numeroCompte:
                 logger.info(f"Compte Firefly existant trouvé pour {mask_sensitive_info(ca_account.numeroCompte)}")
                 return account['id']
-                
+        
         solde = ca_account.account.get('solde') or ca_account.account.get('valorisation') or ca_account.account.get('balance') or '0.00'
-
+        
         if solde == '0.00' or solde is None:
             logger.warning(f"Le compte {mask_sensitive_info(ca_account.numeroCompte)} n'a pas de solde disponible. Il sera ignoré.")
             return None
-
+        
         new_account_data = {
             "name": ca_account.account.get('libelleProduit', 'Compte sans nom'),
             "type": "asset",
@@ -112,13 +107,17 @@ def get_or_create_firefly_account(firefly_client, ca_account):
             "account_role": "defaultAsset",
             "currency_code": "EUR"
         }
-
+        
         new_account = firefly_client.create_account(new_account_data)
+        
         logger.info(f"Nouveau compte Firefly créé pour {mask_sensitive_info(ca_account.numeroCompte)} avec solde masqué {mask_sensitive_info(str(solde))}")
+        
         return new_account['id']
+    
     except requests.HTTPError as e:
         logger.error(f"Erreur lors de la création/récupération du compte Firefly : {e.response.status_code} {e.response.text}")
         return None
+    
     except Exception as e:
         logger.error(f"Erreur inconnue lors de la création/récupération du compte Firefly : {str(e)}")
         return None
@@ -130,66 +129,91 @@ def main():
         config = load_config()
         
         ca_config = config['CreditAgricole']
+        
         ca_cli = CreditAgricoleClient(config)
+        
         ca_cli.department = ca_config['department']
+        
         ca_cli.account_id = ca_config['username']
+        
         ca_cli.password = ca_config['password']
+        
         ca_cli.enabled_accounts = ca_config.get('import_account_id_list', '')
+        
         ca_cli.get_transactions_period = ca_config.get('get_transactions_period_days', '30')
+        
         ca_cli.max_transactions = ca_config.get('max_transactions_per_get', '300')
+        
         ca_cli.validate()
+        
         ca_cli.init_session()
+        
         logger.info("Client Crédit Agricole initialisé et session ouverte")
         
         accounts = ca_cli.get_accounts()
+        
         logger.info(f"Nombre de comptes récupérés : {len(accounts)}")
         
         firefly_client = init_firefly_client(config)
-        
+
         for account in accounts:
+            
             if not account.account:
                 logger.warning(f"Le compte {mask_sensitive_info(account.numeroCompte)} n'a pas d'informations de compte disponibles. Il sera ignoré.")
                 continue
-
+            
             solde = account.account.get('solde') or account.account.get('valorisation') or account.account.get('balance') or '0.00'
+            
             libelle_devise = account.account.get('libelleDevise', 'Devise inconnue')
-
-            logger.info(f"Traitement du compte: {mask_sensitive_info(account.numeroCompte)} - Solde masqué: {mask_sensitive_info(str(solde))} {libelle_devise}")
+            
+            logger.info(f"Traitement du compte:... {mask_sensitive_info(account.numeroCompte)} - Solde masqué: {mask_sensitive_info(str(solde))} {libelle_devise}")
             
             firefly_account_id = get_or_create_firefly_account(firefly_client, account)
+            
             if not firefly_account_id:
                 logger.error(f"Impossible de traiter le compte {mask_sensitive_info(account.numeroCompte)}: échec de création/récupération dans Firefly")
                 continue
-
+            
             # Collecte des transactions existantes dans Firefly
             logger.info("Récupération des transactions existantes dans Firefly")
+            
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
             
             # Création de l'ensemble des transactions existantes pour la comparaison
             existing_set = set()
+            
             for tx in existing_transactions:
                 date = tx['attributes'].get('date')
                 amount = tx['attributes'].get('amount')
                 description = tx['attributes'].get('description')
+                
                 if date and amount and description:
                     transaction_tuple = (date, amount, description)
                     existing_set.add(transaction_tuple)
                     logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
                 else:
                     logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {tx}")
-
+            
             logger.info(f"{len(existing_set)} transactions existantes chargées pour comparaison des doublons.")
             
             transactions = ca_cli.get_transactions(account)
+            
             imported_count = 0
+            
             for transaction in transactions:
+                
                 try:
                     montant = transaction.montantOp
+                    
                     date_operation = parser.parse(transaction.dateOp) if isinstance(transaction.dateOp, str) else transaction.dateOp
+                    
                     libelle = transaction.libelleOp
+                    
                     transaction_type = "withdrawal" if montant < 0 else "deposit"
                     
                     transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
+                    
+                    # Vérification des doublons avant l'importation
                     if transaction_key in existing_set:
                         logger.info(f"Doublon détecté pour la transaction : {transaction_key}. Ignorée.")
                         continue
@@ -206,17 +230,16 @@ def main():
                     }
                     
                     firefly_client.create_transaction(transaction_data)
+                    
                     imported_count += 1
+                
                 except requests.RequestException as e:
                     logger.error(f"Erreur lors de l'importation de la transaction: {str(e)}")
-
+            
             logger.info(f"Transactions importées pour le compte {mask_sensitive_info(account.numeroCompte)}: {imported_count}/{len(transactions)}")
-    
-        logger.info("Importation terminée avec succès")
     
     except Exception as e:
         logger.exception("Une erreur s'est produite lors de l'importation")
-        sys.exit(1)
-
+    
 if __name__ == '__main__':
     main()
