@@ -196,9 +196,15 @@ def main():
 
                     # Vérifier si tous les champs nécessaires sont présents
                     if date and amount and description:
-                        transaction_tuple = (date, amount, description)
-                        existing_set.add(transaction_tuple)
-                        logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
+                        try:
+                            # Assurer que le montant est bien un nombre valide
+                            amount_float = float(amount)
+                            transaction_tuple = (date, str(amount_float), description)
+                            existing_set.add(transaction_tuple)
+                            logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
+                        except ValueError as e:
+                            logger.error(f"Erreur lors de la conversion du montant en float : {amount}. Transaction ignorée.")
+                            continue
                     else:
                         # Enregistrer un message d'avertissement avec plus de détails sur la transaction incomplète
                         logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {detail}")
