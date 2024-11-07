@@ -176,27 +176,32 @@ def main():
             
             # Collecte des transactions existantes dans Firefly
             logger.info("Récupération des transactions existantes dans Firefly")
-            
             existing_transactions = firefly_client.get_transactions(firefly_account_id)
-            
+
             # Création de l'ensemble des transactions existantes pour la comparaison
             existing_set = set()
-            
-            for tx in existing_transactions:
-                # Récupérer les attributs nécessaires
-                attributes = tx.get('attributes', {})
-                date = attributes.get('date')
-                amount = attributes.get('amount')
-                description = attributes.get('description')
 
-                # Vérifier si tous les champs nécessaires sont présents
-                if date and amount and description:
-                    transaction_tuple = (date, amount, description)
-                    existing_set.add(transaction_tuple)
-                    logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
-                else:
-                    # Enregistrer un message d'avertissement avec plus de détails sur la transaction incomplète
-                    logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {tx}")
+            for tx in existing_transactions:
+                # Récupérer les attributs nécessaires depuis le sous-ensemble 'transactions'
+                transaction_details = tx['attributes'].get('transactions', [])
+                
+                if not transaction_details:
+                    logger.warning(f"Transaction sans détails trouvée et ignorée : {tx}")
+                    continue
+
+                for detail in transaction_details:
+                    date = detail.get('date')
+                    amount = detail.get('amount')
+                    description = detail.get('description')
+
+                    # Vérifier si tous les champs nécessaires sont présents
+                    if date and amount and description:
+                        transaction_tuple = (date, amount, description)
+                        existing_set.add(transaction_tuple)
+                        logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
+                    else:
+                        # Enregistrer un message d'avertissement avec plus de détails sur la transaction incomplète
+                        logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {detail}")
             
             logger.info(f"{len(existing_set)} transactions existantes chargées pour comparaison des doublons.")
             
