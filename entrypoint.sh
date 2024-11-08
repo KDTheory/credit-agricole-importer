@@ -2,19 +2,19 @@
 
 echo "Starting entrypoint script"
 
+# Fonction pour exécuter le script Python
 run_script() {
     echo "Running main.py"
     python /app/main.py
     echo "main.py execution completed"
 }
 
-echo "Running initial script"
-run_script
+# Configuration de cron pour exécuter le script à 8h tous les jours
+# Redirection des logs vers stdout/stderr au lieu d'un fichier
+echo "0 8 * * * /bin/bash -c 'python /app/main.py'" | crontab -
 
-echo "Entering main loop"
-while true; do
-    echo "Waiting for next execution"
-    sleep 3600
-    echo "Running scheduled script"
-    run_script
-done
+# Démarrer cron en arrière-plan
+echo "Starting cron service"
+cron -f  # Démarrer cron au premier plan
+
+# Garder le conteneur actif (plus besoin de tail)
