@@ -1,57 +1,82 @@
 # /!\ DISCLAIMER /!\
 
-This code is not mine, this is a fork from https://github.com/Royalphax/credit-agricole-importer.git, the intend of this repo is to have the code in docker
+This code has been modified by me and mainly serve my purpose. At the beggining it was a fork from https://github.com/kdtheory/credit-agricole-importer.git, the intend of this repo was to have the code in docker. I modify everythings and is now capable of many things.
 
 
 ![python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/royalphax/credit-agricole-importer?color=brightgreen)
-![GitHub Repo stars](https://img.shields.io/github/stars/royalphax/credit-agricole-importer?color=yellow)
-![GitHub issues](https://img.shields.io/github/issues/royalphax/credit-agricole-importer?color=yellow)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/kdtheory/credit-agricole-importer?color=brightgreen)
+![GitHub Repo stars](https://img.shields.io/github/stars/kdtheory/credit-agricole-importer?color=yellow)
+![GitHub issues](https://img.shields.io/github/issues/kdtheory/credit-agricole-importer?color=yellow)
 
 # Credit Agricole Importer for FireflyIII
 
 Automatic import of [Credit Agricole](https://www.credit-agricole.fr/) accounts and transactions into [FireflyIII](https://github.com/firefly-iii/firefly-iii) personal finance manager, 
-made with use of [python-creditagricole-particuliers](https://github.com/dmachard/python-creditagricole-particuliers).
+made with use of [python-creditagricole-particuliers](https://github.com/dmachard/python-creditagricole-particuliers) and [Firefly-III-API-Client](https://github.com/ms32035/firefly-iii-client).
+This project allows for the automatic import of banking transactions from a Crédit Agricole account into Firefly III, a personal financial management application. The project uses a **`.env`** file for configuring credentials and parameters, which are then processed by a **`generate_config.sh`** script to generate the necessary configuration files for the project.
 
 ## Features
-- Auto import choosen accounts
-- Auto import transactions from customizable period
-- Limit number of transactions to import
-- Auto assign budget, category, tags, expense/revenue account on transactions depending on their description<b>*</b>
-  - And even auto rename them!<b>*</b>
+- **Automatic transaction import**: Synchronizes banking transactions from the Crédit Agricole API to Firefly III.
+- **Duplicate detection**: Checks before each import to avoid adding transactions that already exist in Firefly III.
+- **Multi-account management**: Supports multiple Crédit Agricole accounts and maps them to specific accounts in Firefly III.
+- **Automatic scheduling**: Executes daily at 8 AM via cron (configurable) to keep your data up to date.
+- **Log anonymization**: Sensitive information such as amounts and descriptions are masked in logs to protect confidentiality.
 
-<b>*</b>_Although these functionalities are available in the FireflyIII dashboard with [automated rules](https://docs.firefly-iii.org/how-to/firefly-iii/features/rules/), they have been integrated into credit-agricole-importer. This integration allows for the execution of these actions directly through the application, bypassing the need for the [FireflyIII](https://github.com/firefly-iii/firefly-iii) instance._
+<b>*</b>_Although these functionalities are available in the FireflyIII dashboard with [automated rules](https://docs.firefly-iii.org/how-to/firefly-iii/features/rules/), they have been integrated into credit-agricole-importer. This integration allows for the execution of these actions directly through the application, bypassing the need for the [FireflyIII](https://github.com/firefly-iii/firefly-iii) instance.
+
+## Prerequisites
+
+- A Crédit Agricole account with access to the Crédit Agricole Particuliers API.
+- A [Firefly III](https://www.firefly-iii.org/) instance configured with a personal access token.
+- Docker (optional but recommended for simplified execution).
+
 
 ## How to install
 
-### Install requirements
-* Stable and working release :
-```
-cd /path/you/want
-wget https://github.com/Royalphax/credit-agricole-importer/archive/refs/tags/v0.3.1.zip
-unzip v0.3.1.zip
-cd credit-agricole-importer-0.3.1
-pip install -r requirements.txt
-```
-* or Latest version of the code :
-```
-cd /path/you/want
-git clone https://github.com/Royalphax/credit-agricole-importer.git
-cd credit-agricole-importer
-pip install -r requirements.txt
-```
-### Usage
-```
-python main.py
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/credit-agricole-firefly-importer.git
+cd credit-agricole-firefly-importer 
 ```
 
-During the first run it will automatically create the ```config.ini``` file. To help you to fill it, [here is a Wiki Page](https://github.com/Royalphax/credit-agricole-importer/wiki/Config-file).
+## Create a Docker compose eg :
+```
+  credit-agricole-importer:
+    image: kdtheory/credit-agricole-importer:latest
+    container_name: ca_importer
+    depends_on:
+      - firefly-core
+    environment:
+      # FIREFLY_III_URL: http://firefly-core:8080
+      FIREFLY_III_URL: https://your-firefly-instance.local
+      FIREFLY_PERSONAL_ACCESS_TOKEN: your_personal_token
+      CREDIT_AGRICOLE_USERNAME: your_username
+      CREDIT_AGRICOLE_PASSWORD: =your_password
+      CREDIT_AGRICOLE_DEPARTMENT=XX  # Department number (e.g., 31)
+      ACCOUNTS_MAPPING: ${ACCOUNTS_MAPPING}
+      LOGGING_LEVEL: DEBUG
+    volumes:
+      - ca_importer_data:/app/data
+    restart: unless-stopped
+```
 
-After you successfully filled the config file, each time you run ```main.py```, it will import your transactions.
 
-### Auto run this script
+## Docker compose environment (best to put in .env)
+```
+# Crédit Agricole Credentials
+CREDIT_AGRICOLE_USERNAME=your_username
+CREDIT_AGRICOLE_PASSWORD=your_password
+CREDIT_AGRICOLE_DEPARTMENT=XX  # Department number (e.g., 31)
 
-To automatically import your transactions on a daily, monthly or weekly basis, I recommend using `crontab`. [Here is an example of a tutorial](https://www.tutorialspoint.com/unix_commands/crontab.htm).
+# Firefly III Configuration
+FIREFLY_III_URL=https://your-firefly-instance.local
+FIREFLY_III_PERSONAL_ACCESS_TOKEN=your_personal_token
+
+# Other parameters
+IMPORT_ACCOUNT_ID_LIST=ACCOUNT_IDS_TO_IMPORT (comma-separated)
+GET_TRANSACTIONS_PERIOD_DAYS=30
+MAX_TRANSACTIONS_PER_GET=300
+```
 
 ## FAQ
 
