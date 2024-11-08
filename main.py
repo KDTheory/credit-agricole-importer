@@ -194,17 +194,20 @@ def main():
                     amount = detail.get('amount')
                     description = detail.get('description')
 
-                    # Vérifier si tous les champs nécessaires sont présents
+                    # Standardiser les champs pour éviter les différences mineures
                     if date and amount and description:
-                        try:
-                            # Assurer que le montant est bien un nombre valide
-                            amount_float = float(amount)
-                            transaction_tuple = (date, str(amount_float), description)
-                            existing_set.add(transaction_tuple)
-                            logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
-                        except ValueError as e:
-                            logger.error(f"Erreur lors de la conversion du montant en float : {amount}. Transaction ignorée.")
-                            continue
+                        # Convertir la date au format standard YYYY-MM-DD
+                        standardized_date = parser.parse(date).strftime("%Y-%m-%d")
+                        
+                        # Convertir le montant en float pour éviter les différences d'arrondi
+                        standardized_amount = f"{float(amount):.2f}"
+                        
+                        # Nettoyer la description en supprimant les espaces superflus
+                        standardized_description = description.strip()
+                        
+                        transaction_tuple = (standardized_date, standardized_amount, standardized_description)
+                        existing_set.add(transaction_tuple)
+                        logger.debug(f"Transaction existante ajoutée pour comparaison : {transaction_tuple}")
                     else:
                         # Enregistrer un message d'avertissement avec plus de détails sur la transaction incomplète
                         logger.warning(f"Transaction incomplète ignorée lors de la comparaison des doublons : {detail}")
@@ -216,28 +219,31 @@ def main():
             imported_count = 0
             
             for transaction in transactions:
-                
                 try:
                     montant = transaction.montantOp
                     
+                    # Standardiser la date au format YYYY-MM-DD
                     date_operation = parser.parse(transaction.dateOp) if isinstance(transaction.dateOp, str) else transaction.dateOp
+                    standardized_date = date_operation.strftime("%Y-%m-%d")
                     
-                    libelle = transaction.libelleOp
+                    # Convertir le montant en float pour éviter les différences d'arrondi
+                    standardized_amount = f"{abs(float(montant)):.2f}"
                     
-                    transaction_type = "withdrawal" if montant < 0 else "deposit"
-                    
-                    transaction_key = (date_operation.strftime("%Y-%m-%d"), str(abs(montant)), libelle)
+                    # Nettoyer la description en supprimant les espaces superflus
+                    libelle = transaction.libelleOp.strip()
+
+                    transaction_key = (standardized_date, standardized_amount, libelle)
                     
                     # Vérification des doublons avant l'importation
                     if transaction_key in existing_set:
                         logger.info(f"Doublon détecté pour la transaction : {transaction_key}. Ignorée.")
                         continue
-                    
+
                     transaction_data = {
                         "transactions": [{
-                            "type": transaction_type,
-                            "date": date_operation.strftime("%Y-%m-%d"),
-                            "amount": str(abs(montant)),
+                            "type": "withdrawal" if montant < 0 else "deposit",
+                            "date": standardized_date,
+                            "amount": standardized_amount,
                             "description": libelle,
                             "source_id": firefly_account_id if montant < 0 else None,
                             "destination_id": firefly_account_id if montant >= 0 else None,
@@ -245,7 +251,6 @@ def main():
                     }
                     
                     firefly_client.create_transaction(transaction_data)
-                    
                     imported_count += 1
                 
                 except requests.RequestException as e:
