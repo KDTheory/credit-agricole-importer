@@ -236,7 +236,7 @@ def main():
                     
                     # Vérification des doublons avant l'importation
                     if transaction_key in existing_set:
-                        masked_transaction_key = tuple(mask_sensitive_info(str(item)) for item in transaction_key
+                        masked_transaction_key = tuple(mask_sensitive_info(str(item)) for item in transaction_key)
                         logger.info(f"Doublon détecté pour la transaction : {masked_transaction_key}. Ignorée.")
                         continue
 
