@@ -2,19 +2,24 @@
 
 echo "Starting entrypoint script"
 
-# Fonction pour exécuter le script Python
+# Function to execute the Python script
 run_script() {
     echo "Running main.py"
     python /app/main.py
     echo "main.py execution completed"
 }
 
-# Configuration de cron pour exécuter le script à 8h tous les jours
-# Redirection des logs vers stdout/stderr au lieu d'un fichier
+# Run the script immediately when the container starts
+echo "Running initial script"
+run_script
+
+# Set up cron job to run at 8 AM every day and log output to Docker logs
 echo "0 8 * * * /bin/bash -c 'python /app/main.py' >> /proc/1/fd/1 2>&1" | crontab -
 
-# Démarrer cron en arrière-plan
-echo "Starting cron service"
-cron -f  # Démarrer cron au premier plan
+# Confirm that cron has been set up correctly
+echo "Cron job setup:"
+crontab -l
 
-# Garder le conteneur actif (plus besoin de tail)
+# Start cron in the foreground (important for Docker)
+echo "Starting cron service"
+cron -f
