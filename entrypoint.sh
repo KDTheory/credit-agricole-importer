@@ -11,7 +11,7 @@ run_script() {
 
 # Configuration de cron pour exécuter le script à 8h tous les jours
 # Redirection des logs vers stdout/stderr au lieu d'un fichier
-echo "0 8 * * * /bin/bash -c 'python /app/main.py'" | crontab -
+echo "0 8 * * * /bin/bash -c 'python /app/main.py' >> /proc/1/fd/1 2>&1" | crontab -
 
 # Démarrer cron en arrière-plan
 echo "Starting cron service"
